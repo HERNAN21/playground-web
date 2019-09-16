@@ -148,7 +148,7 @@ class Aprobaciones extends React.Component {
     render() {
 
         const data_listar=this.state.solicitud_aprobaciones;
-        // console.log(data_listar);
+        console.log(data_listar);
         return (
             <>
              <SimpleHeader name="Aprobaciones Pendientes" parentName="Tables" />

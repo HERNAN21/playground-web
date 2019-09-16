@@ -3,7 +3,7 @@ import { Card, CardHeader,CardBody,Label, FormGroup,Table, CardFooter, Input, Co
 // core components
 import SimpleHeader from "components/Headers/SimpleHeader.jsx";
 
-import { server, api_name} from "variables/general.jsx";
+import { server, api_name,estado_proceso_de_altas} from "variables/general.jsx";
 
 class Registrocandidatos extends React.Component {
 
@@ -47,6 +47,39 @@ class Registrocandidatos extends React.Component {
         .then(res=>res.json())
         .then(function(data) {
             if (data.respuesta=='success') {
+
+                for (let i = 0; i < data.result.length; i++) {
+                    console.log(estado_proceso_de_altas);
+                    data.result[i].estado_des1=false;
+                    if (data.result[i].estado==1) {
+                        data.result[i].estado_des=estado_proceso_de_altas[0].value;
+                        data.result[i].estado=false;    
+                    }else if(data.result[i].estado==2){
+                        data.result[i].estado=true;
+                        data.result[i].estado_des=estado_proceso_de_altas[1].value;
+                    }else if(data.result[i].estado==3){
+                        data.result[i].estado=false;
+                        data.result[i].estado_des=estado_proceso_de_altas[2].value;
+                        data.result[i].estado_des1=true;
+                    }else if(data.result[i].estado==4){
+                        data.result[i].estado=true;
+                        data.result[i].estado_des=estado_proceso_de_altas[3].value;
+                    }else if(data.result[i].estado==5){
+                        data.result[i].estado=false;
+                        data.result[i].estado_des=estado_proceso_de_altas[4].value;
+                    }else if(data.result[i].estado==6){
+                        data.result[i].estado=true;
+                        data.result[i].estado_des=estado_proceso_de_altas[5].value;
+                    }else if(data.result[i].estado==7){
+                        data.result[i].estado=false;
+                        data.result[i].estado_des=estado_proceso_de_altas[6].value;
+                        data.result[i].estado_des1=true;
+                    } else if(data.result[i].estado==11){
+                        data.result[i].estado=true;
+                        data.result[i].estado_des=estado_proceso_de_altas[10].value;
+                    }
+                }
+
                 this.setState({data_solicitud_list:data.result})
                 console.log(data.result);
             } else {
@@ -208,7 +241,7 @@ class Registrocandidatos extends React.Component {
                                                             <a className="font-weight-bold" href="#pablo" onClick={e => e.preventDefault()}>{listado.id}</a>
                                                         </td>
                                                         <td className="table-user" style={{textAlign:"center"}} >
-                                                            <b>{listado.estado}</b>
+                                                            <b>{listado.estado_des}</b>
                                                         </td>
                                                         <td className="table-user" style={{textAlign:"center"}}>
                                                             <b>{listado.fecha_registro}</b>

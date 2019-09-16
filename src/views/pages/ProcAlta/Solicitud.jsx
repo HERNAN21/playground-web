@@ -73,6 +73,7 @@ class Solicitud extends React.Component {
                 this.setState({ accesos: accesos });
                 this.setState({ plazo: plazo });
             }.bind(this));
+        
     }
 
     handleForm = (e) => {
@@ -323,7 +324,7 @@ class Solicitud extends React.Component {
         </>);
         this.setState({ script_modalidad: components })
     }
-
+    
     modalidades = (e) => {
         this.state.datasolicitud.id_modalidad = e.target.value;
         this.state.datasolicitud.nombre_cliente = '';
@@ -333,7 +334,7 @@ class Solicitud extends React.Component {
         this.state.datasolicitud.estimacion_duracion_tiempo = '';
         this.state.datasolicitud.observaciones = '';
         this.forceUpdate();
-
+        
         if (e.target.value == 1) {
             return this.modalidad1();            
         } if (e.target.value == 2) {
@@ -517,6 +518,7 @@ class Solicitud extends React.Component {
                                     <Label className="form-control-label" htmlFor="example-text-input" md="2">Modalidad</Label>
                                     <Col md="2">
                                         <Input type="select" name="id_modalidad"  bsSize="sm" className="form-control-sm" onChange={e=>this.modalidades(e)}>
+                                            <option value="">[Seleccione]</option>
                                             {
                                                 this.state.modalidad.map((v, i) => {
                                                     return (<>

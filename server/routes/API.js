@@ -132,12 +132,11 @@ api.post(api_name + '/aprobacionespendientes', (req, res) => {
 
         " from public.solicitud as sol " +
         " inner join public.personal as us on us.codigo=sol.id_aprobador " +
-        " inner join public.personal as j_d on j_d.codigo=sol.id_jefe_directo " +
-        " inner join public.general as puesto on sol.id_puesto=puesto.codigo and 'PUESTO'=puesto.grupo " +
-        " inner join public.general as modalidad on sol.id_modalidad=modalidad.codigo and 'MODALIDAD'= modalidad.grupo " +
-        " inner join public.general as plazo on sol.id_plazo=plazo.codigo and 'PLAZO'=plazo.grupo " +
-        " --where sol.estado=1  ";
-
+        " inner join public.personal as j_d on j_d.codigo=sol.id_jefe_directo "+
+        " inner join public.general as puesto on rtrim(sol.id_puesto)=rtrim(puesto.codigo) and 'PUESTO'=rtrim(puesto.grupo) "+
+        " inner join public.general as modalidad on rtrim(sol.id_modalidad)=rtrim(modalidad.codigo) and 'MODALIDAD'= rtrim(modalidad.grupo) "+
+        " inner join public.general as plazo on rtrim(sol.id_plazo)=rtrim(plazo.codigo) and 'PLAZO'=rtrim(plazo.grupo) "+
+        " -- where sol.estado=1  ";
     var condicion1 = "";
     if (req.body.num_solicitud != "") {
         condicion1 = " and  sol.id='" + req.body.num_solicitud + "'";
@@ -301,7 +300,7 @@ api.post(api_name + '/listadosolicitudcandidatos', (req, res) => {
 // agregar candidatos
 
 api.post(api_name + '/candidatos', (req, res) => {
-    var query = "     insert into candidato_solicitud  (id_solicitud,nombres,apellido_paterno,apellido_materno,tipo_documento, numero_documento,disponibilidad,email,file_cv,observaciones,fecha_registro,usuario_registro,estado) ";
+    var query = "     insert into solicitud_candidato  (id_solicitud,nombres,apellido_paterno,apellido_materno,tipo_documento, numero_documento,disponibilidad,email,file_cv,observaciones,fecha_registro,usuario_registro,estado) ";
     var values = "values(" + req.body.id_solicitud + ",'" + req.body.nombres + "','" + req.body.apellido_paterno + "','" +
         req.body.apellido_materno + "','" + req.body.tipo_documento + "','" +
         req.body.numero_documento + "','" + req.body.disponibilidad + "','" + req.body.email + "','" + req.body.file_cv + "','" +
