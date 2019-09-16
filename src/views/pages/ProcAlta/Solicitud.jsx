@@ -188,7 +188,7 @@ class Solicitud extends React.Component {
                         <Label className="form-control-label" htmlFor="example-text-input" md="2" style={{ marginRight: "0px", marginTop: "-5px" }}>Fecha estimada del incremento de volumen</Label>
                         <Col md="4">
                             <FormGroup>
-                                <Input className="form-control-sm" id="example3cols1Input" placeholder="" type="date" onChange={this.handleForm} />
+                                <Input className="form-control-sm" id="example3cols1Input" name="inicio_estimado_tiempo" placeholder="" type="date" onChange={this.handleForm} />
                             </FormGroup>
                         </Col>
                     </Row>
@@ -242,7 +242,7 @@ class Solicitud extends React.Component {
                         <Label className="form-control-label" htmlFor="example-text-input" md="2" style={{ marginRight: "0px", marginTop: "-5px" }}>Duración estimada de la suplencia</Label>
                         <Col md="4">
                             <FormGroup>
-                                <Input className="form-control-sm" id="example3cols1Input" placeholder="" type="text" onKeyUp={this.handleForm} />
+                                <Input className="form-control-sm" id="example3cols1Input" name="inicio_estimado_tiempo" placeholder="" type="text" onKeyUp={this.handleForm} />
                             </FormGroup>
                         </Col>
                     </Row>
@@ -284,7 +284,7 @@ class Solicitud extends React.Component {
                         <Label className="form-control-label" htmlFor="example-text-input" md="2" style={{ marginRight: "0px", marginTop: "-5px" }}>Fecha estimada de inicio de campaña</Label>
                         <Col md="4">
                             <FormGroup>
-                                <Input className="form-control-sm" id="example3cols1Input" placeholder="" type="date" onChange={this.handleForm} />
+                                <Input className="form-control-sm" id="example3cols1Input" name="inicio_estimado_tiempo" placeholder="" type="date" onChange={this.handleForm} />
                             </FormGroup>
                         </Col>
                     </Row>
