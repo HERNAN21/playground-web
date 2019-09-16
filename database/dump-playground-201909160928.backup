@@ -1,0 +1,932 @@
+--
+-- PostgreSQL database dump
+--
+
+-- Dumped from database version 11.5
+-- Dumped by pg_dump version 11.5
+
+-- Started on 2019-09-16 09:28:11
+
+SET statement_timeout = 0;
+SET lock_timeout = 0;
+SET idle_in_transaction_session_timeout = 0;
+SET client_encoding = 'UTF8';
+SET standard_conforming_strings = on;
+SELECT pg_catalog.set_config('search_path', '', false);
+SET check_function_bodies = false;
+SET xmloption = content;
+SET client_min_messages = warning;
+SET row_security = off;
+
+--
+-- TOC entry 3 (class 2615 OID 2200)
+-- Name: public; Type: SCHEMA; Schema: -; Owner: postgres
+--
+
+CREATE SCHEMA public;
+
+
+ALTER SCHEMA public OWNER TO postgres;
+
+--
+-- TOC entry 2923 (class 0 OID 0)
+-- Dependencies: 3
+-- Name: SCHEMA public; Type: COMMENT; Schema: -; Owner: postgres
+--
+
+COMMENT ON SCHEMA public IS 'standard public schema';
+
+
+--
+-- TOC entry 610 (class 1247 OID 17718)
+-- Name: e_return; Type: TYPE; Schema: public; Owner: pool_recursos_qa
+--
+
+CREATE TYPE public.e_return AS (
+	code character(1),
+	text character varying(250),
+	id character varying(18)
+);
+
+
+ALTER TYPE public.e_return OWNER TO pool_recursos_qa;
+
+--
+-- TOC entry 228 (class 1255 OID 17719)
+-- Name: get_solicitud_baja(integer); Type: FUNCTION; Schema: public; Owner: pool_recursos_qa
+--
+
+CREATE FUNCTION public.get_solicitud_baja(p_id integer DEFAULT NULL::integer) RETURNS TABLE(id integer, id_trabajador integer, id_jefe integer, tipo_baja integer, tipo_cese_formal integer, tipo_cese_real integer, fecha_cese date, fecha_notificacion date, fecha_carta date, observaciones character, nombre_trabajador character, nombre_jefe character)
+    LANGUAGE plpgsql
+    AS $$  
+DECLARE 
+	var_r record;
+BEGIN         
+	if p_id > 0 then
+	FOR var_r in(		
+			select sb.id, sb.id_trabajador, sb.id_jefe, sb.tipo_baja, sb.tipo_cese_formal, sb.tipo_cese_real, sb.fecha_cese, 
+			sb.fecha_notificacion, sb.fecha_carta, sb.observaciones, 
+			t.nombres || ' ' || t.apellido_paterno || ' ' || t.apellido_materno as nom_trabajador, 
+			j.nombres || ' ' || j.apellido_paterno || ' ' || j.apellido_materno as nom_jefe
+			from solicitud_baja as sb
+			left join users as t
+			on sb.id_trabajador = cast(t.codigo as integer)
+			left join users as j
+			on sb.id_jefe = cast(j.codigo as integer)
+			where sb.id = p_id
+		)	
+		loop
+			id := var_r.id;
+			id_trabajador := var_r.id_trabajador;
+			id_jefe := var_r.id_jefe;
+			tipo_baja := var_r.tipo_baja;
+			tipo_cese_formal := var_r.tipo_cese_formal;
+			tipo_cese_real := var_r.tipo_cese_real;
+			fecha_cese := var_r.fecha_cese;
+			fecha_notificacion := var_r.fecha_notificacion;
+			fecha_carta := var_r.fecha_carta;
+			observaciones := var_r.observaciones;
+			nombre_trabajador := var_r.nom_trabajador;
+			nombre_jefe := var_r.nom_jefe;
+			RETURN NEXT;  
+		end loop; 		
+	else
+		FOR var_r in(		
+			select sb.id, sb.id_trabajador, sb.id_jefe, sb.tipo_baja, sb.tipo_cese_formal, sb.tipo_cese_real, sb.fecha_cese, 
+			sb.fecha_notificacion, sb.fecha_carta, sb.observaciones, 
+			t.nombres || ' ' || t.apellido_paterno || ' ' || t.apellido_materno as nom_trabajador, 
+			j.nombres || ' ' || j.apellido_paterno || ' ' || j.apellido_materno as nom_jefe
+			from solicitud_baja as sb
+			left join users as t
+			on sb.id_trabajador = cast(t.codigo as integer)
+			left join users as j
+			on sb.id_jefe = cast(j.codigo as integer)
+		)	
+		loop
+			id := var_r.id;
+			id_trabajador := var_r.id_trabajador;
+			id_jefe := var_r.id_jefe;
+			tipo_baja := var_r.tipo_baja;
+			tipo_cese_formal := var_r.tipo_cese_formal;
+			tipo_cese_real := var_r.tipo_cese_real;
+			fecha_cese := var_r.fecha_cese;
+			fecha_notificacion := var_r.fecha_notificacion;
+			fecha_carta := var_r.fecha_carta;
+			observaciones := var_r.observaciones;
+			nombre_trabajador := var_r.nom_trabajador;
+			nombre_jefe := var_r.nom_jefe;
+			RETURN NEXT;  
+		end loop; 
+	end if;
+END;                                                                                                                                                  
+$$;
+
+
+ALTER FUNCTION public.get_solicitud_baja(p_id integer) OWNER TO pool_recursos_qa;
+
+--
+-- TOC entry 229 (class 1255 OID 17720)
+-- Name: post_solicitud_baja(integer, integer, integer, integer, integer, date, date, date, character); Type: FUNCTION; Schema: public; Owner: pool_recursos_qa
+--
+
+CREATE FUNCTION public.post_solicitud_baja(p_id_trabajador integer, p_id_jefe integer, p_tipo_baja integer, p_tipo_cese_formal integer, p_tipo_cese_real integer, p_fecha_cese date, p_fecha_notificacion date, p_fecha_carta date, p_observaciones character) RETURNS public.e_return
+    LANGUAGE plpgsql
+    AS $$
+declare 
+	p_id integer;
+	e_return e_return;
+	begin
+		
+		insert into solicitud_baja(id_trabajador, id_jefe, tipo_baja, tipo_cese_formal, tipo_cese_real,
+		fecha_cese, fecha_notificacion, fecha_carta, observaciones)
+		values(p_id_trabajador, p_id_jefe, p_tipo_baja, p_tipo_cese_formal, p_tipo_cese_real, p_fecha_cese, 
+		p_fecha_notificacion, p_fecha_carta, p_observaciones)
+		returning id into p_id;
+	
+		e_return.id = p_id;
+		e_return.text = 'Se registró la solicitud de baja';
+		e_return.code = 'S';
+	
+	return e_return;
+
+	END;
+
+$$;
+
+
+ALTER FUNCTION public.post_solicitud_baja(p_id_trabajador integer, p_id_jefe integer, p_tipo_baja integer, p_tipo_cese_formal integer, p_tipo_cese_real integer, p_fecha_cese date, p_fecha_notificacion date, p_fecha_carta date, p_observaciones character) OWNER TO pool_recursos_qa;
+
+SET default_tablespace = '';
+
+SET default_with_oids = false;
+
+--
+-- TOC entry 209 (class 1259 OID 17828)
+-- Name: general; Type: TABLE; Schema: public; Owner: pool_recursos_qa
+--
+
+CREATE TABLE public.general (
+    grupo character varying(20) NOT NULL,
+    codigo character varying(50) NOT NULL,
+    descripcion character varying(100) NOT NULL,
+    detalle character varying(200),
+    fecha_registro date,
+    usuario_registro character varying(50),
+    fecha_nodificacion date,
+    usuario_modificacion character varying(50),
+    activo boolean
+);
+
+
+ALTER TABLE public.general OWNER TO pool_recursos_qa;
+
+--
+-- TOC entry 197 (class 1259 OID 17721)
+-- Name: id_candidato_solicitud; Type: SEQUENCE; Schema: public; Owner: pool_recursos_qa
+--
+
+CREATE SEQUENCE public.id_candidato_solicitud
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.id_candidato_solicitud OWNER TO pool_recursos_qa;
+
+--
+-- TOC entry 199 (class 1259 OID 17730)
+-- Name: id_centro_costo; Type: SEQUENCE; Schema: public; Owner: pool_recursos_qa
+--
+
+CREATE SEQUENCE public.id_centro_costo
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.id_centro_costo OWNER TO pool_recursos_qa;
+
+--
+-- TOC entry 200 (class 1259 OID 17739)
+-- Name: id_grupo; Type: SEQUENCE; Schema: public; Owner: pool_recursos_qa
+--
+
+CREATE SEQUENCE public.id_grupo
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.id_grupo OWNER TO pool_recursos_qa;
+
+--
+-- TOC entry 201 (class 1259 OID 17745)
+-- Name: id_remoneracion; Type: SEQUENCE; Schema: public; Owner: pool_recursos_qa
+--
+
+CREATE SEQUENCE public.id_remoneracion
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.id_remoneracion OWNER TO pool_recursos_qa;
+
+--
+-- TOC entry 202 (class 1259 OID 17747)
+-- Name: id_solicitud; Type: SEQUENCE; Schema: public; Owner: pool_recursos_qa
+--
+
+CREATE SEQUENCE public.id_solicitud
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.id_solicitud OWNER TO pool_recursos_qa;
+
+--
+-- TOC entry 203 (class 1259 OID 17749)
+-- Name: id_users; Type: SEQUENCE; Schema: public; Owner: pool_recursos_qa
+--
+
+CREATE SEQUENCE public.id_users
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.id_users OWNER TO pool_recursos_qa;
+
+--
+-- TOC entry 208 (class 1259 OID 17772)
+-- Name: personal; Type: TABLE; Schema: public; Owner: pool_recursos_qa
+--
+
+CREATE TABLE public.personal (
+    codigo integer NOT NULL,
+    sociedad character varying(100) NOT NULL,
+    codigo_division character(50) NOT NULL,
+    nombre_division_personal character varying(100) NOT NULL,
+    codigo_sub_division character(50) NOT NULL,
+    nombres_sub_division character varying(100) NOT NULL,
+    dni character(8) NOT NULL,
+    nombres character varying(100) NOT NULL,
+    apellido_paterno character varying(100) NOT NULL,
+    apellido_materno character varying(100) NOT NULL,
+    email_corp character varying(100) NOT NULL,
+    email_personal character varying(100) NOT NULL,
+    codigo_posicion character(20) NOT NULL,
+    descripcion_posicion character varying(100) NOT NULL,
+    codigo_centro_coste character(20) NOT NULL,
+    centro_coste character varying(100) NOT NULL,
+    codigo_funcion character(20) NOT NULL,
+    funcion character varying(100) NOT NULL,
+    codigo_ocupacion character(20) NOT NULL,
+    ocupacion character varying(100) NOT NULL,
+    codigo_unidad_org character(20) NOT NULL,
+    unidad_organizativa character varying(100) NOT NULL,
+    fecha_nac date NOT NULL,
+    inicio_contrata date NOT NULL,
+    fin_contrata date NOT NULL,
+    cod_jefe character(20) NOT NULL,
+    saldo_dias_vacaion character(20),
+    saldo_dias_descanso character(20),
+    categoria character varying(100)
+);
+
+
+ALTER TABLE public.personal OWNER TO pool_recursos_qa;
+
+--
+-- TOC entry 204 (class 1259 OID 17758)
+-- Name: solicitud; Type: TABLE; Schema: public; Owner: pool_recursos_qa
+--
+
+CREATE TABLE public.solicitud (
+    id integer DEFAULT nextval('public.id_solicitud'::regclass) NOT NULL,
+    id_aprobador integer NOT NULL,
+    id_jefe_directo integer NOT NULL,
+    id_puesto character(1) NOT NULL,
+    cantidad integer NOT NULL,
+    id_modalidad character(1),
+    fecha_estimada_inicio date,
+    id_plazo character(1),
+    nombre_cliente character varying(300),
+    descripcion_servicio character varying(100),
+    volumen_motivo character(20),
+    inicio_estimado_tiempo date,
+    estimacion_duracion_tiempo character varying(100),
+    observaciones character varying(300),
+    descripcion character varying(200),
+    remuneracion character(20),
+    fecha_registro timestamp without time zone,
+    usuario_registro character varying(50),
+    fecha_modificacion timestamp without time zone,
+    usuario_modificacion character varying(50),
+    estado integer NOT NULL,
+    estado_vicepresidencia integer,
+    glosa character varying(100),
+    sociedad character varying(100),
+    lider_uo character varying(100),
+    codigo_uo character(50),
+    descripcion_uo character varying(100),
+    cod_divicion character varying(50),
+    cod_sub_div character varying(50),
+    sctr character varying(100),
+    id_area_personal character varying(100),
+    id_relacion_personal character varying(100),
+    file_dp character varying(500),
+    direccion character varying(150)
+);
+
+
+ALTER TABLE public.solicitud OWNER TO pool_recursos_qa;
+
+--
+-- TOC entry 205 (class 1259 OID 17765)
+-- Name: solicitud_baja; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.solicitud_baja (
+    id integer NOT NULL,
+    id_trabajador integer,
+    id_jefe integer,
+    tipo_baja integer,
+    tipo_cese_formal integer,
+    tipo_cese_real integer,
+    fecha_cese date,
+    fecha_notificacion date,
+    fecha_carta date,
+    observaciones character(140),
+    activo boolean
+);
+
+
+ALTER TABLE public.solicitud_baja OWNER TO postgres;
+
+--
+-- TOC entry 215 (class 1259 OID 17954)
+-- Name: solicitud_baja_deuda; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.solicitud_baja_deuda (
+    id_solicitud integer NOT NULL,
+    id_tipo integer NOT NULL,
+    monto double precision,
+    estado boolean NOT NULL,
+    usuario_creacion integer,
+    fecha_creacion date,
+    usuario_modificacion integer,
+    fecha_modificacion date
+);
+
+
+ALTER TABLE public.solicitud_baja_deuda OWNER TO postgres;
+
+--
+-- TOC entry 206 (class 1259 OID 17768)
+-- Name: solicitud_baja_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.solicitud_baja_id_seq
+    START WITH 3
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.solicitud_baja_id_seq OWNER TO postgres;
+
+--
+-- TOC entry 207 (class 1259 OID 17770)
+-- Name: solicitud_baja_id_seq1; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.solicitud_baja_id_seq1
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.solicitud_baja_id_seq1 OWNER TO postgres;
+
+--
+-- TOC entry 2924 (class 0 OID 0)
+-- Dependencies: 207
+-- Name: solicitud_baja_id_seq1; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.solicitud_baja_id_seq1 OWNED BY public.solicitud_baja.id;
+
+
+--
+-- TOC entry 198 (class 1259 OID 17723)
+-- Name: solicitud_candidato; Type: TABLE; Schema: public; Owner: pool_recursos_qa
+--
+
+CREATE TABLE public.solicitud_candidato (
+    id integer DEFAULT nextval('public.id_candidato_solicitud'::regclass) NOT NULL,
+    id_solicitud integer NOT NULL,
+    nombres character varying(100) NOT NULL,
+    apellido_paterno character varying(100) NOT NULL,
+    apellido_materno character varying(100) NOT NULL,
+    tipo_documento integer NOT NULL,
+    numero_documento character(20) NOT NULL,
+    disponibilidad integer NOT NULL,
+    email character varying(100) NOT NULL,
+    file_cv character varying(200) NOT NULL,
+    observaciones character varying(250) NOT NULL,
+    fecha_registro date NOT NULL,
+    usuario_registro character varying(50) NOT NULL,
+    fecha_modificacion date,
+    usuario_modificacion character varying(50),
+    estado integer NOT NULL,
+    id_sede_entrevista integer,
+    contacto_sede character(50),
+    fecha_entrevista timestamp without time zone,
+    prioridad character(10),
+    codigo_posicion character(50)
+);
+
+
+ALTER TABLE public.solicitud_candidato OWNER TO pool_recursos_qa;
+
+--
+-- TOC entry 211 (class 1259 OID 17888)
+-- Name: solicitud_candidato_archivos; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.solicitud_candidato_archivos (
+    id_candidato integer NOT NULL,
+    id integer NOT NULL,
+    name character varying,
+    location character varying,
+    state boolean
+);
+
+
+ALTER TABLE public.solicitud_candidato_archivos OWNER TO postgres;
+
+--
+-- TOC entry 212 (class 1259 OID 17920)
+-- Name: solicitud_candidato_ceco; Type: TABLE; Schema: public; Owner: pool_recursos_qa
+--
+
+CREATE TABLE public.solicitud_candidato_ceco (
+    id_candidato integer NOT NULL,
+    centro_costo character varying NOT NULL,
+    porcentaje double precision NOT NULL,
+    fecha_registro date NOT NULL,
+    usuario_registro character varying(50) NOT NULL,
+    fecha_modificacion date,
+    usuario_modificacion character varying(100),
+    estado integer NOT NULL
+);
+
+
+ALTER TABLE public.solicitud_candidato_ceco OWNER TO pool_recursos_qa;
+
+--
+-- TOC entry 214 (class 1259 OID 17939)
+-- Name: solicitud_candidato_remuneracion; Type: TABLE; Schema: public; Owner: pool_recursos_qa
+--
+
+CREATE TABLE public.solicitud_candidato_remuneracion (
+    id_candidato integer NOT NULL,
+    id integer NOT NULL,
+    tipo_moneda integer NOT NULL,
+    remuneracion_basico double precision NOT NULL,
+    vales double precision,
+    asig_movilidad double precision,
+    asignacion_otros double precision,
+    fecha_registro date NOT NULL,
+    usuario_registro character varying(50) NOT NULL,
+    fecha_modificacion date,
+    usuario_modificacion character varying(50),
+    estado boolean NOT NULL
+);
+
+
+ALTER TABLE public.solicitud_candidato_remuneracion OWNER TO pool_recursos_qa;
+
+--
+-- TOC entry 213 (class 1259 OID 17937)
+-- Name: solicitud_candidato_remuneracion_id_seq; Type: SEQUENCE; Schema: public; Owner: pool_recursos_qa
+--
+
+CREATE SEQUENCE public.solicitud_candidato_remuneracion_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.solicitud_candidato_remuneracion_id_seq OWNER TO pool_recursos_qa;
+
+--
+-- TOC entry 2925 (class 0 OID 0)
+-- Dependencies: 213
+-- Name: solicitud_candidato_remuneracion_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: pool_recursos_qa
+--
+
+ALTER SEQUENCE public.solicitud_candidato_remuneracion_id_seq OWNED BY public.solicitud_candidato_remuneracion.id;
+
+
+--
+-- TOC entry 210 (class 1259 OID 17847)
+-- Name: solicitud_detalle; Type: TABLE; Schema: public; Owner: pool_recursos_qa
+--
+
+CREATE TABLE public.solicitud_detalle (
+    id_solicitud integer NOT NULL,
+    id_grupo integer NOT NULL,
+    id_grupo_tipo character varying(50) NOT NULL,
+    descripcion character varying(100),
+    fecha_registro date NOT NULL,
+    usuario_registro character varying(50) NOT NULL,
+    fecha_nodificacion date,
+    usuario_modificacion character varying(50),
+    estado boolean
+);
+
+
+ALTER TABLE public.solicitud_detalle OWNER TO pool_recursos_qa;
+
+--
+-- TOC entry 2750 (class 2604 OID 17781)
+-- Name: solicitud_baja id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.solicitud_baja ALTER COLUMN id SET DEFAULT nextval('public.solicitud_baja_id_seq1'::regclass);
+
+
+--
+-- TOC entry 2751 (class 2604 OID 17942)
+-- Name: solicitud_candidato_remuneracion id; Type: DEFAULT; Schema: public; Owner: pool_recursos_qa
+--
+
+ALTER TABLE ONLY public.solicitud_candidato_remuneracion ALTER COLUMN id SET DEFAULT nextval('public.solicitud_candidato_remuneracion_id_seq'::regclass);
+
+
+--
+-- TOC entry 2911 (class 0 OID 17828)
+-- Dependencies: 209
+-- Data for Name: general; Type: TABLE DATA; Schema: public; Owner: pool_recursos_qa
+--
+
+INSERT INTO public.general VALUES ('PUESTO', '1', 'ANALISTA', NULL, '2019-09-03', 'HROJAS', NULL, NULL, true);
+INSERT INTO public.general VALUES ('PUESTO', '2', 'PROGRAMADOR FRONTEND', NULL, '2019-09-03', 'HROJAS', NULL, NULL, true);
+INSERT INTO public.general VALUES ('PUESTO', '3', 'PROGRAMADOR BACKEND', NULL, '2019-09-03', 'HROJAS', NULL, NULL, true);
+INSERT INTO public.general VALUES ('EQUIPO', '1', 'Casco', NULL, '2019-09-03', 'HROJAS', NULL, NULL, true);
+INSERT INTO public.general VALUES ('EQUIPO', '2', 'Botas', NULL, '2019-09-03', 'HROJAS', NULL, NULL, true);
+INSERT INTO public.general VALUES ('EQUIPO', '3', 'Chaleco', NULL, '2019-09-03', 'HROJAS', NULL, NULL, true);
+INSERT INTO public.general VALUES ('EQUIPO', '4', 'Laptop', NULL, '2019-09-03', 'HROJAS', NULL, NULL, true);
+INSERT INTO public.general VALUES ('EQUIPO', '5', 'Anexo', NULL, '2019-09-03', 'HROJAS', NULL, NULL, true);
+INSERT INTO public.general VALUES ('EQUIPO', '6', 'Celular', NULL, '2019-09-03', 'HROJAS', NULL, NULL, true);
+INSERT INTO public.general VALUES ('ACCESOS', '1', 'AS400', NULL, '2019-09-03', 'HROJAS', NULL, NULL, true);
+INSERT INTO public.general VALUES ('ACCESOS', '2', 'SAP', NULL, '2019-09-03', 'HROJAS', NULL, NULL, true);
+INSERT INTO public.general VALUES ('PLAZO', '1', 'PLAZO 1', NULL, '2019-09-03', 'HROJAS', NULL, NULL, true);
+INSERT INTO public.general VALUES ('PLAZO', '2', 'PLAZO 1', NULL, '2019-09-03', 'HROJAS', NULL, NULL, true);
+INSERT INTO public.general VALUES ('MODALIDAD', '1', 'Por inicio de nueva actividad', 'Por inicio de nueva actividad', '2019-09-03', 'HROJAS', NULL, NULL, true);
+INSERT INTO public.general VALUES ('MODALIDAD', '2', 'Por incremento de nueva actividad', 'Por incremento de nueva actividad', '2019-09-03', 'HROJAS', NULL, NULL, true);
+INSERT INTO public.general VALUES ('MODALIDAD', '3', 'Suplencia', 'Suplencia', '2019-09-03', 'HROJAS', NULL, NULL, true);
+INSERT INTO public.general VALUES ('MODALIDAD', '4', 'Temporada', 'Temporada', '2019-09-03', 'HROJAS', NULL, NULL, true);
+INSERT INTO public.general VALUES ('MODALIDAD', '5', 'Otros Tipos de Modalidad', 'Otros Tipos de Modalidad', '2019-09-03', 'HROJAS', NULL, NULL, true);
+INSERT INTO public.general VALUES ('TIPO_BAJA', '1', 'Tipo baja 1', 'Tipo baja 1', '2019-09-11', 'WPEREYRAC', NULL, NULL, true);
+INSERT INTO public.general VALUES ('TIPO_BAJA', '2', 'Tipo baja 2', 'Tipo baja 2', '2019-09-11', 'WPEREYRAC', NULL, NULL, true);
+INSERT INTO public.general VALUES ('TIPO_CESE_FORMAL', '1', 'Tipo cese formal 1', 'Tipo cese formal 1', '2019-09-11', 'WPEREYRAC', NULL, NULL, true);
+INSERT INTO public.general VALUES ('TIPO_CESE_FORMAL', '2', 'Tipo cese formal 2', 'Tipo cese formal 2', '2019-09-11', 'WPEREYRAC', NULL, NULL, true);
+INSERT INTO public.general VALUES ('TIPO_CESE_REAL', '1', 'Tipo cese real 1', NULL, '2019-09-11', 'WPEREYRAC', NULL, NULL, true);
+INSERT INTO public.general VALUES ('TIPO_CESE_REAL', '2', 'Tipo cese real 2', NULL, '2019-09-11', 'WPEREYRAC', NULL, NULL, true);
+
+
+--
+-- TOC entry 2910 (class 0 OID 17772)
+-- Dependencies: 208
+-- Data for Name: personal; Type: TABLE DATA; Schema: public; Owner: pool_recursos_qa
+--
+
+INSERT INTO public.personal VALUES (400184, '251', 'RA02                                              ', 'CALLAO', 'CA10                                              ', 'PRIMAX', '08483789', 'SAAVEDRA', 'FERNANDEZ', 'ENRIQUE RAUL', '', '', '20034730            ', 'ALMACENERO 1', '51WL1AAN92          ', 'AL LO AA GRN COMU  CDF', '50012733            ', 'RAN_OPE_001', '421001              ', 'ALMACENERO', '20000467            ', 'GRN PRIMAX', '1965-11-10', '2018-01-12', '2019-12-31', '                    ', '                    ', '                    ', '1');
+INSERT INTO public.personal VALUES (400275, '251', 'RA02                                              ', 'CALLAO', 'CA08                                              ', 'RSA', '06140288', 'POMA', 'LEONARDO', 'EDUARDO', '', '', '20033715            ', 'AUXILIAR DE OPERACIONES', '51XB1BA992          ', 'DT EX SA  COMU  CDF', '50012733            ', 'RAN_OPE_001', '462001              ', 'AUXILIAR DE OFICINA', '20000339            ', 'DT CERCADO 1', '1955-01-10', '2019-01-01', '2019-12-31', '                    ', '                    ', '                    ', '1');
+INSERT INTO public.personal VALUES (404115, '251', 'RA01                                              ', 'LIMA', 'LI17                                              ', 'GASPAR H', '40303064', 'MENDO', 'SALDAÑA', 'YRIS', '', '', '20009630            ', 'AUXILIAR DE ARCHIVO 3', '51FE1BA092          ', 'AR ADM SA COMU  CDF', '50012733            ', 'RAN_OPE_001', '421001              ', 'ALMACENERO', '20000364            ', 'ARCH NUE SERV ESP', '1981-04-07', '2019-01-01', '2019-12-31', '                    ', '                    ', '                    ', '2');
+INSERT INTO public.personal VALUES (404823, '251', 'RA02                                              ', 'CALLAO', 'CA08                                              ', 'RSA', '03667161', 'NAVARRO', 'RANGEL', 'RAFAEL', '', '', '20034394            ', 'ALMACENERO 1', '51WB1BAAW2          ', 'AL TN SA ALF TEC  CDF', '50012733            ', 'RAN_OPE_001', '421001              ', 'ALMACENERO', '20000501            ', 'CD ALFA - SAMSUNG', '1976-01-01', '2019-01-03', '2019-12-31', '                    ', '                    ', '                    ', '1');
+
+
+--
+-- TOC entry 2906 (class 0 OID 17758)
+-- Dependencies: 204
+-- Data for Name: solicitud; Type: TABLE DATA; Schema: public; Owner: pool_recursos_qa
+--
+
+INSERT INTO public.solicitud VALUES (57, 450276, 450278, '2', 1, '1', '2019-10-01', '2', '', '', '                    ', '2019-10-01', '', '', '', NULL, '2019-09-16 04:13:07.460887', '', NULL, NULL, 6, NULL, 'texto de la glosa', '251', '2', 'cdigouo                                           ', '', 'coddiv', 'codsubdiv', 'texto xctr', 'area per', 'ceco', '', '');
+
+
+--
+-- TOC entry 2907 (class 0 OID 17765)
+-- Dependencies: 205
+-- Data for Name: solicitud_baja; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+
+
+--
+-- TOC entry 2917 (class 0 OID 17954)
+-- Dependencies: 215
+-- Data for Name: solicitud_baja_deuda; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+
+
+--
+-- TOC entry 2900 (class 0 OID 17723)
+-- Dependencies: 198
+-- Data for Name: solicitud_candidato; Type: TABLE DATA; Schema: public; Owner: pool_recursos_qa
+--
+
+
+
+--
+-- TOC entry 2913 (class 0 OID 17888)
+-- Dependencies: 211
+-- Data for Name: solicitud_candidato_archivos; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+
+
+--
+-- TOC entry 2914 (class 0 OID 17920)
+-- Dependencies: 212
+-- Data for Name: solicitud_candidato_ceco; Type: TABLE DATA; Schema: public; Owner: pool_recursos_qa
+--
+
+
+
+--
+-- TOC entry 2916 (class 0 OID 17939)
+-- Dependencies: 214
+-- Data for Name: solicitud_candidato_remuneracion; Type: TABLE DATA; Schema: public; Owner: pool_recursos_qa
+--
+
+
+
+--
+-- TOC entry 2912 (class 0 OID 17847)
+-- Dependencies: 210
+-- Data for Name: solicitud_detalle; Type: TABLE DATA; Schema: public; Owner: pool_recursos_qa
+--
+
+INSERT INTO public.solicitud_detalle VALUES (57, 4, 'EQUIPO', '', '2019-09-16', '', NULL, NULL, true);
+INSERT INTO public.solicitud_detalle VALUES (57, 6, 'EQUIPO', '', '2019-09-16', '', NULL, NULL, true);
+INSERT INTO public.solicitud_detalle VALUES (57, 2, 'ACCESOS', '', '2019-09-16', '', NULL, NULL, true);
+
+
+--
+-- TOC entry 2926 (class 0 OID 0)
+-- Dependencies: 197
+-- Name: id_candidato_solicitud; Type: SEQUENCE SET; Schema: public; Owner: pool_recursos_qa
+--
+
+SELECT pg_catalog.setval('public.id_candidato_solicitud', 15, true);
+
+
+--
+-- TOC entry 2927 (class 0 OID 0)
+-- Dependencies: 199
+-- Name: id_centro_costo; Type: SEQUENCE SET; Schema: public; Owner: pool_recursos_qa
+--
+
+SELECT pg_catalog.setval('public.id_centro_costo', 1, false);
+
+
+--
+-- TOC entry 2928 (class 0 OID 0)
+-- Dependencies: 200
+-- Name: id_grupo; Type: SEQUENCE SET; Schema: public; Owner: pool_recursos_qa
+--
+
+SELECT pg_catalog.setval('public.id_grupo', 23, true);
+
+
+--
+-- TOC entry 2929 (class 0 OID 0)
+-- Dependencies: 201
+-- Name: id_remoneracion; Type: SEQUENCE SET; Schema: public; Owner: pool_recursos_qa
+--
+
+SELECT pg_catalog.setval('public.id_remoneracion', 5, true);
+
+
+--
+-- TOC entry 2930 (class 0 OID 0)
+-- Dependencies: 202
+-- Name: id_solicitud; Type: SEQUENCE SET; Schema: public; Owner: pool_recursos_qa
+--
+
+SELECT pg_catalog.setval('public.id_solicitud', 57, true);
+
+
+--
+-- TOC entry 2931 (class 0 OID 0)
+-- Dependencies: 203
+-- Name: id_users; Type: SEQUENCE SET; Schema: public; Owner: pool_recursos_qa
+--
+
+SELECT pg_catalog.setval('public.id_users', 2, true);
+
+
+--
+-- TOC entry 2932 (class 0 OID 0)
+-- Dependencies: 206
+-- Name: solicitud_baja_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.solicitud_baja_id_seq', 3, false);
+
+
+--
+-- TOC entry 2933 (class 0 OID 0)
+-- Dependencies: 207
+-- Name: solicitud_baja_id_seq1; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.solicitud_baja_id_seq1', 2, true);
+
+
+--
+-- TOC entry 2934 (class 0 OID 0)
+-- Dependencies: 213
+-- Name: solicitud_candidato_remuneracion_id_seq; Type: SEQUENCE SET; Schema: public; Owner: pool_recursos_qa
+--
+
+SELECT pg_catalog.setval('public.solicitud_candidato_remuneracion_id_seq', 1, false);
+
+
+--
+-- TOC entry 2761 (class 2606 OID 17887)
+-- Name: general general_pk; Type: CONSTRAINT; Schema: public; Owner: pool_recursos_qa
+--
+
+ALTER TABLE ONLY public.general
+    ADD CONSTRAINT general_pk PRIMARY KEY (grupo, codigo);
+
+
+--
+-- TOC entry 2759 (class 2606 OID 18009)
+-- Name: personal personal_pk; Type: CONSTRAINT; Schema: public; Owner: pool_recursos_qa
+--
+
+ALTER TABLE ONLY public.personal
+    ADD CONSTRAINT personal_pk PRIMARY KEY (codigo);
+
+
+--
+-- TOC entry 2771 (class 2606 OID 17963)
+-- Name: solicitud_baja_deuda solicitud_baja_deuda_pk; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.solicitud_baja_deuda
+    ADD CONSTRAINT solicitud_baja_deuda_pk PRIMARY KEY (id_solicitud, id_tipo);
+
+
+--
+-- TOC entry 2757 (class 2606 OID 17953)
+-- Name: solicitud_baja solicitud_baja_pk; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.solicitud_baja
+    ADD CONSTRAINT solicitud_baja_pk PRIMARY KEY (id);
+
+
+--
+-- TOC entry 2765 (class 2606 OID 17895)
+-- Name: solicitud_candidato_archivos solicitud_candidato_archivos_pk; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.solicitud_candidato_archivos
+    ADD CONSTRAINT solicitud_candidato_archivos_pk PRIMARY KEY (id_candidato, id);
+
+
+--
+-- TOC entry 2767 (class 2606 OID 17936)
+-- Name: solicitud_candidato_ceco solicitud_candidato_ceco_un; Type: CONSTRAINT; Schema: public; Owner: pool_recursos_qa
+--
+
+ALTER TABLE ONLY public.solicitud_candidato_ceco
+    ADD CONSTRAINT solicitud_candidato_ceco_un UNIQUE (id_candidato, centro_costo);
+
+
+--
+-- TOC entry 2753 (class 2606 OID 17904)
+-- Name: solicitud_candidato solicitud_candidato_pk; Type: CONSTRAINT; Schema: public; Owner: pool_recursos_qa
+--
+
+ALTER TABLE ONLY public.solicitud_candidato
+    ADD CONSTRAINT solicitud_candidato_pk PRIMARY KEY (id);
+
+
+--
+-- TOC entry 2769 (class 2606 OID 17949)
+-- Name: solicitud_candidato_remuneracion solicitud_candidato_remuneracion_pk; Type: CONSTRAINT; Schema: public; Owner: pool_recursos_qa
+--
+
+ALTER TABLE ONLY public.solicitud_candidato_remuneracion
+    ADD CONSTRAINT solicitud_candidato_remuneracion_pk PRIMARY KEY (id);
+
+
+--
+-- TOC entry 2763 (class 2606 OID 17951)
+-- Name: solicitud_detalle solicitud_detalle_pk; Type: CONSTRAINT; Schema: public; Owner: pool_recursos_qa
+--
+
+ALTER TABLE ONLY public.solicitud_detalle
+    ADD CONSTRAINT solicitud_detalle_pk PRIMARY KEY (id_solicitud, id_grupo, id_grupo_tipo);
+
+
+--
+-- TOC entry 2755 (class 2606 OID 17851)
+-- Name: solicitud solicitud_pk; Type: CONSTRAINT; Schema: public; Owner: pool_recursos_qa
+--
+
+ALTER TABLE ONLY public.solicitud
+    ADD CONSTRAINT solicitud_pk PRIMARY KEY (id);
+
+
+--
+-- TOC entry 2772 (class 2606 OID 17862)
+-- Name: solicitud_candidato candidato_solicitud_fk; Type: FK CONSTRAINT; Schema: public; Owner: pool_recursos_qa
+--
+
+ALTER TABLE ONLY public.solicitud_candidato
+    ADD CONSTRAINT candidato_solicitud_fk FOREIGN KEY (id_solicitud) REFERENCES public.solicitud(id);
+
+
+--
+-- TOC entry 2773 (class 2606 OID 17852)
+-- Name: solicitud_detalle detalle_solicitud_id_solicitud_fkey; Type: FK CONSTRAINT; Schema: public; Owner: pool_recursos_qa
+--
+
+ALTER TABLE ONLY public.solicitud_detalle
+    ADD CONSTRAINT detalle_solicitud_id_solicitud_fkey FOREIGN KEY (id_solicitud) REFERENCES public.solicitud(id);
+
+
+--
+-- TOC entry 2777 (class 2606 OID 17957)
+-- Name: solicitud_baja_deuda solicitud_baja_deuda_fk; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.solicitud_baja_deuda
+    ADD CONSTRAINT solicitud_baja_deuda_fk FOREIGN KEY (id_solicitud) REFERENCES public.solicitud_baja(id);
+
+
+--
+-- TOC entry 2774 (class 2606 OID 17905)
+-- Name: solicitud_candidato_archivos solicitud_candidato_archivos_fk; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.solicitud_candidato_archivos
+    ADD CONSTRAINT solicitud_candidato_archivos_fk FOREIGN KEY (id_candidato) REFERENCES public.solicitud_candidato(id);
+
+
+--
+-- TOC entry 2775 (class 2606 OID 17928)
+-- Name: solicitud_candidato_ceco solicitud_candidato_ceco_fk; Type: FK CONSTRAINT; Schema: public; Owner: pool_recursos_qa
+--
+
+ALTER TABLE ONLY public.solicitud_candidato_ceco
+    ADD CONSTRAINT solicitud_candidato_ceco_fk FOREIGN KEY (id_candidato) REFERENCES public.solicitud_candidato(id);
+
+
+--
+-- TOC entry 2776 (class 2606 OID 17943)
+-- Name: solicitud_candidato_remuneracion solicitud_candidato_remuneracion_fk; Type: FK CONSTRAINT; Schema: public; Owner: pool_recursos_qa
+--
+
+ALTER TABLE ONLY public.solicitud_candidato_remuneracion
+    ADD CONSTRAINT solicitud_candidato_remuneracion_fk FOREIGN KEY (id_candidato) REFERENCES public.solicitud_candidato(id);
+
+
+-- Completed on 2019-09-16 09:28:13
+
+--
+-- PostgreSQL database dump complete
+--
+
