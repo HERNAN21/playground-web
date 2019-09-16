@@ -1,7 +1,7 @@
 import React from "react";
 
 // reactstrap components
-import {Badge,Button,Card,CardHeader,CardBody,CardFooter,Table,Container,Row,Col,FormGroup,Label,InputGroup,Input,InputGroupAddon,InputGroupText} from "reactstrap";
+import {Badge,Button,Card,CardHeader,CardBody,CardFooter,Table,Container,Row,Col,FormGroup,Label,InputGroup,Input,InputGroupAddon,InputGroupText,Modal, ModalHeader, ModalBody, ModalFooter} from "reactstrap";
 // core components
 import SimpleHeader from "components/Headers/SimpleHeader.jsx";
 import { server, api_name,estado_proceso_de_altas} from "variables/general.jsx";
@@ -22,9 +22,28 @@ class Seguimientonuevopersonal extends React.Component {
                 creador_solicitud:''
             },
             solicitud_data_all:[],
-            
-            
+            equipos_accesos:[],
+            solicitud_detalle:[],
+            modal: false,
         }
+
+        this.cargarData=this.cargarData.bind(this);
+        this.showModalDetalle = this.showModalDetalle.bind(this);
+
+
+        fetch(this.state.server + api_name + '/general')
+        .then(response => response.json())
+        .then(function (data) {
+            var equipos_accesos_push = [];
+            for (let i = 0; i < data.length; i++) {
+                const datos = data[i];
+                if (datos.grupo == 'EQUIPO' || datos.grupo == 'ACCESOS') {
+                    equipos_accesos_push.push(datos);
+                }
+            }
+            this.setState({ equipos_accesos: equipos_accesos_push });
+            
+        }.bind(this));
     }
 
     cargarData=(e)=>{
@@ -65,9 +84,18 @@ class Seguimientonuevopersonal extends React.Component {
         this.cargarData();
     }
 
-    showModalDetalle=()=>{
-        console.log('show modal');
+    // SHOW MODAL DETALLS
+    showModalDetalle=(e,data)=>{
+        // console.log(data);
+        console.log(this.state.equipos_accesos);
+
+        this.setState(prevState => ({
+            modal: !prevState.modal
+        }));
         
+        // console.log('show modal');
+        // equipos_accesos
+        // solicitud_detalle
     }
 
     dataEstadoChange=(e,data)=>{
@@ -133,11 +161,11 @@ class Seguimientonuevopersonal extends React.Component {
 
    
     render() {
-        console.log(this.state.solicitud_data_all);
+        // console.log(this.state.solicitud_data_all);
         var solicitud_data=this.state.solicitud_data_all;
         return (
             <>
-            {this.state.alert}
+            {/* {this.state.alert} */}
              <SimpleHeader name="Seguimiento de Nuevo Personal" parentName="Tables" />
                 <Container className="mt--6" fluid>
                     <Card>
@@ -214,7 +242,7 @@ class Seguimientonuevopersonal extends React.Component {
                                                             {listado.direccion}
                                                         </td>
                                                         <td style={{textAlign:"right"}}>
-                                                            <Button className="btn btn-sm" color="primary" onClick={(e)=>this.showModalDetalle(e)}>
+                                                            <Button className="btn btn-sm" color="primary" onClick={(e)=>this.showModalDetalle(e,listado)}>
                                                                 <span> Ver Detalle </span> 
                                                                 <i class="fa fa-info" aria-hidden="true"></i>
                                                             </Button>
@@ -248,7 +276,89 @@ class Seguimientonuevopersonal extends React.Component {
                     </CardFooter>
                 </Card>
             </Container>
-            
+            {/* MODAL DETALLS */}
+            <Modal isOpen={this.state.modal} showModalDetalle={this.showModalDetalle} className={this.props.className} style={{marginTop:"150px"}} size="lg">
+                <ModalBody>
+                    <Card>
+                        {/* <CardHeader style={{textAlign:"center"}}><b>Registrar</b></CardHeader> */}
+                        <CardBody>
+                            <Row>
+                                <Col md="6">
+                                    <Table>
+                                        <thead>
+                                            <tr>
+                                                <th style={{textAlign:"center"}}>EQUIPOS</th>
+                                                
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {/* {
+                                                data_candidato_solicitud_list.map((listar,key)=>{
+                                                    return (<>
+                                                        <tr>
+                                                            <td>Candidato {(key+1)}</td>
+                                                            <td>{listar.numero_documento}</td>
+                                                            <td>{listar.nombres+' - '+ listar.apellido_paterno+', '+listar.apellido_materno}</td>
+                                                            <td>
+                                                                <Input className="form-control-sm" type="text" onKeyUp={(e)=>this.dataCodigoPosicion({value:e.target.value,'listado':listar})} ></Input>
+                                                            </td>
+                                                            <td style={{textAlign:"center"}}><Input type="checkbox"></Input> </td>
+                                                        </tr>
+                                                    </>);
+                                                })
+                                            } */}
+                                        </tbody>
+                                        <tfoot>
+
+                                        </tfoot>
+                                    </Table>
+                                </Col>
+                                <Col md="6">
+                                    <Table>
+                                        <thead>
+                                            <tr>
+                                                <th style={{textAlign:"center"}}>ACCESOS</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {/* {
+                                                data_candidato_solicitud_list.map((listar,key)=>{
+                                                    return (<>
+                                                        <tr>
+                                                            <td>Candidato {(key+1)}</td>
+                                                            <td>{listar.numero_documento}</td>
+                                                            <td>{listar.nombres+' - '+ listar.apellido_paterno+', '+listar.apellido_materno}</td>
+                                                            <td>
+                                                                <Input className="form-control-sm" type="text" onKeyUp={(e)=>this.dataCodigoPosicion({value:e.target.value,'listado':listar})} ></Input>
+                                                            </td>
+                                                            <td style={{textAlign:"center"}}><Input type="checkbox"></Input> </td>
+                                                        </tr>
+                                                    </>);
+                                                })
+                                            } */}
+                                        </tbody>
+                                        <tfoot>
+
+                                        </tfoot>
+                                    </Table>
+                                </Col>
+                            </Row>
+                            <br/>
+                            <Row>
+                                <Col md="12">
+                                    <div style={{float:"right"}}>
+                                        {/* cerrar modal por verse this.ModalNuevo */}
+                                        <Button color="success" className="btn btn-sm" onClick={this.showModalDetalle}>Asignar Cargo</Button>
+                                        <Button color="danger" className="btn btn-sm" onClick={this.showModalDetalle}>Cerrar</Button>
+                                    </div>
+                                </Col>
+                            </Row>
+
+                        </CardBody>
+                    </Card>
+                </ModalBody>
+                
+            </Modal>
         </>
     );
   }

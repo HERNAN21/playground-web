@@ -191,7 +191,6 @@ api.put(api_name + '/updatestatusall', (req, res) => {
 });
 
 
-
 // Inssert remuneracion
 
 api.post(api_name + '/remuneracion', (req, res) => {
