@@ -136,7 +136,8 @@ api.post(api_name + '/aprobacionespendientes', (req, res) => {
         " inner join public.general as puesto on rtrim(sol.id_puesto)=rtrim(puesto.codigo) and 'PUESTO'=rtrim(puesto.grupo) "+
         " inner join public.general as modalidad on rtrim(sol.id_modalidad)=rtrim(modalidad.codigo) and 'MODALIDAD'= rtrim(modalidad.grupo) "+
         " inner join public.general as plazo on rtrim(sol.id_plazo)=rtrim(plazo.codigo) and 'PLAZO'=rtrim(plazo.grupo) "+
-        " -- where sol.estado=1  ";
+        " where 0=0 ";
+        // " -- and sol.estado=1  ";
     var condicion1 = "";
     if (req.body.num_solicitud != "") {
         condicion1 = " and  sol.id='" + req.body.num_solicitud + "'";
@@ -170,6 +171,23 @@ api.put(api_name + '/updatestatus', (req, res) => {
         .catch((e) => {
             res.json({ 'respuesta': 'error', 'result': e });
         })
+});
+
+// Update estatus all
+api.put(api_name + '/updatestatusall', (req, res) => {
+    for (let i = 0; i < req.body.length; i++) {
+        var query = " update solicitud set estado=:estado where id=:id_solicitud ";
+        db.sequelize.query(query, { replacements: {estado: req.body[i].estado, id_solicitud: req.body[i].id }, 
+                    type: db.sequelize.QueryTypes.UPDATE }, { type: db.sequelize.QueryTypes.UPDATE })
+        .then((result) => {
+            console.log(result);
+            res.json({ 'respuesta': 'success', 'result': result })
+        })
+        .catch((e) => {
+            console.log(e);
+            res.json({ 'respuesta': 'error', 'result': e });
+        })
+    }
 });
 
 
@@ -238,6 +256,8 @@ api.put(api_name + '/updaterequerimiento', (req, res) => {
 // Datos registro candidatos
 
 api.post(api_name + '/listadosolicitudcandidatos', (req, res) => {
+    console.log(req.body);
+
     var query = "select " +
         // data solicitudd
         " sol.id,sol.id_aprobador,sol.id_jefe_directo,sol.id_puesto,sol.cantidad,sol.id_modalidad," +
@@ -269,7 +289,7 @@ api.post(api_name + '/listadosolicitudcandidatos', (req, res) => {
         " inner join public.general as puesto on sol.id_puesto=puesto.codigo and 'PUESTO'=puesto.grupo " +
         " inner join public.general as modalidad on sol.id_modalidad=modalidad.codigo and 'MODALIDAD'= modalidad.grupo " +
         " inner join public.general as plazo on sol.id_plazo=plazo.codigo and 'PLAZO'=plazo.grupo " +
-        " --where 0=0 ";
+        " where 0=0 ";
     // Por verser
     //  and sol.estado=0 ;
 

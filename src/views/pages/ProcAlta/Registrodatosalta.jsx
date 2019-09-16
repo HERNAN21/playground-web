@@ -28,7 +28,6 @@ class Registrodatosalta extends React.Component {
             data_ver:{
                 solicitud_id:'',
                 puesto_des:'',
-
             }
             
 
