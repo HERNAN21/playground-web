@@ -5,7 +5,7 @@ import React from "react";
 import {Badge,Button,Card,CardHeader,CardBody,CardFooter,Table,Container,Row,Col,FormGroup,Label,InputGroup,Input,InputGroupAddon,InputGroupText} from "reactstrap";
 // core components
 import SimpleHeader from "components/Headers/SimpleHeader.jsx";
-import { server, api_name} from "variables/general.jsx";
+import { server, api_name,estado_proceso_de_altas} from "variables/general.jsx";
 
 
 var  format = require("date-format");
@@ -55,7 +55,38 @@ class Registrodatosalta extends React.Component {
         })
         .then(res=>res.json())
         .then(function(data) {
+            console.log(data);
             if (data.respuesta=='success') {
+                for (let i = 0; i < data.result.length; i++) {
+                    data.result[i].estado_des1=false;
+                    if (data.result[i].estado==1) {
+                        data.result[i].estado_des=estado_proceso_de_altas[0].value;
+                        data.result[i].estado=false;    
+                    }else if(data.result[i].estado==2){
+                        data.result[i].estado=true;
+                        data.result[i].estado_des=estado_proceso_de_altas[1].value;
+                    }else if(data.result[i].estado==3){
+                        data.result[i].estado=false;
+                        data.result[i].estado_des=estado_proceso_de_altas[2].value;
+                        data.result[i].estado_des1=true;
+                    }else if(data.result[i].estado==4){
+                        data.result[i].estado=true;
+                        data.result[i].estado_des=estado_proceso_de_altas[3].value;
+                    }else if(data.result[i].estado==5){
+                        data.result[i].estado=false;
+                        data.result[i].estado_des=estado_proceso_de_altas[4].value;
+                    }else if(data.result[i].estado==6){
+                        data.result[i].estado=true;
+                        data.result[i].estado_des=estado_proceso_de_altas[5].value;
+                    }else if(data.result[i].estado==7){
+                        data.result[i].estado=false;
+                        data.result[i].estado_des=estado_proceso_de_altas[6].value;
+                        data.result[i].estado_des1=true;
+                    } else if(data.result[i].estado==11){
+                        data.result[i].estado=true;
+                        data.result[i].estado_des=estado_proceso_de_altas[10].value;
+                    }
+                }
                 this.setState({solicitud_data_all:data.result})
             } else {
                 
@@ -81,7 +112,7 @@ class Registrodatosalta extends React.Component {
     }
 
     dataDetallshow=(data)=>{
-        console.log(data);
+        // console.log(data);
         this.setState({solicitud_data_uno:data})
         // data_solicitud_detall_all
         var data_detall=this.state.data_solicitud_detall_all_candidato;
@@ -101,7 +132,48 @@ class Registrodatosalta extends React.Component {
     }
 
 
-   
+    updateFormCandidatos=(e,data)=>{
+        console.log(e.target.name);
+        // data_solicitud_detall_candidatos
+        var data_alter_view=this.state.data_solicitud_detall_candidatos;
+        for (let i = 0; i < data_alter_view.length; i++) {
+            if (data.id==data_alter_view[i].id) {
+                if (e.target.name=="cod_trabajo") {
+                    this.state.data_solicitud_detall_candidatos[i].codigo_trabajo=e.target.value;
+                }else if(e.target.name=="talla_1"){
+                    this.state.data_solicitud_detall_candidatos[i].talla_1=e.target.value;
+                }else if(e.target.name=="talla_2"){
+                    this.state.data_solicitud_detall_candidatos[i].talla_2=e.target.value;
+                }else if(e.target.name=="talla_3"){
+                    this.state.data_solicitud_detall_candidatos[i].talla_3=e.target.value;
+                }else if(e.target.name=="genero"){
+                    this.state.data_solicitud_detall_candidatos[i].genero=e.target.value;
+                }
+
+            }
+        }
+        this.forceUpdate();
+    }
+
+    btnUpdateDatosCandidato=(e)=>{
+        var update_data=this.state.data_solicitud_detall_candidatos;
+        console.log(update_data);
+        fetch(this.state.server + api_name+ '/updatecandidatodatos',{
+            method: 'PUT',
+            body: JSON.stringify(update_data),
+            headers: {'Content-Type':'application/json'}
+        })
+        .then(res=>res.json())
+        .then(function(data) {
+            if (data.respuesta=='success') {
+                alert(data.respuesta)
+                console.log(data.result);
+            } else {
+                console.log(data.respuesta);
+            }
+        }.bind(this))
+    }
+
     render() {
         // console.log(this.state.solicitud_data_all)
         const data_list=this.state.solicitud_data_all;
@@ -163,7 +235,7 @@ class Registrodatosalta extends React.Component {
                                                             <a className="font-weight-bold" href="#pablo" onClick={this.ModalRemoneracion}>{listado.id}{this.props.buttonLabel}</a>
                                                         </td>
                                                         <td className="table-user">
-                                                            <b>State</b>
+                                                            <b>{listado.estado_des}</b>
                                                         </td>
                                                         <td className="table-user">
                                                             <b>{format.asString('dd/MM/yyyy', new Date(listado.fecha_registro))}</b>
@@ -209,12 +281,17 @@ class Registrodatosalta extends React.Component {
                     </CardFooter>
                 </Card>
                 <Card>
-                    <CardHeader className="border-0" style={{marginTop:"-20px"}}>
+                    <CardHeader className="border-0" style={{marginTop:"-20px",marginBottom:"-30px" }}>
                         <Row>
                             <Label className="form-control-label" htmlFor="example-text-input" md="2"> <b>Solicitud {this.state.data_ver.solicitud_id}</b> </Label>
                         </Row>
                         <Row  style={{marginTop:"-15px"}}>
-                            <Label className="form-control-label" htmlFor="example-text-input" md="2">Agregar Datos</Label>
+                            <Col md="10">
+                                <Label className="form-control-label" htmlFor="example-text-input" md="2">Agregar Datos</Label>
+                            </Col>
+                            <Col md="2">
+                                <Button color='primary' className="btn btn-sm" onClick={this.btnUpdateDatosCandidato}>Actualizar Datos</Button>
+                            </Col>
                         </Row>
                     </CardHeader>
                     <CardBody>
@@ -251,26 +328,40 @@ class Registrodatosalta extends React.Component {
                                                             <b>{this.state.data_ver.puesto_des}</b>
                                                         </td>
                                                         <td>
-                                                            <Input  type="text" className="form-control-sm"/>
+                                                            <Input name="cod_trabajo"  type="text" className="form-control-sm" value={listado_detalle.codigo_trabajo} onChange={(e)=>{this.updateFormCandidatos(e,listado_detalle)}}/>
                                                         </td>
                                                         <td className="table-user">
-                                                            <Input className="form-control-sm" type="select">
-                                                                <option>Option 1</option>
+                                                            <Input name="genero" className="form-control-sm" type="select" value={listado_detalle.genero} onChange={(e)=>{this.updateFormCandidatos(e,listado_detalle)}}>
+                                                                <option value="">[Seleccione]</option>
+                                                                <option value="1">Hombre</option>
+                                                                <option value="2">Mujer</option>
                                                             </Input>
                                                         </td>
                                                         <td>
-                                                            <Input className="form-control-sm" type="select">
-                                                                <option>Option 1</option>
+                                                            <Input name="talla_1" className="form-control-sm" type="select" value={listado_detalle.talla_1} onChange={(e)=>{this.updateFormCandidatos(e,listado_detalle)}}>
+                                                                <option value="">[Seleccione]</option>
+                                                                <option value="1">Talla 1</option>
+                                                                <option value="2">Talla 2</option>
+                                                                <option value="3">Talla 3</option>
+                                                                <option value="4">Talla 4</option>
                                                             </Input>
                                                         </td>
                                                         <td>
-                                                            <Input className="form-control-sm" type="select">
-                                                                <option>Option 1</option>
+                                                        <Input name="talla_2" className="form-control-sm" type="select" value={listado_detalle.talla_2} onChange={(e)=>{this.updateFormCandidatos(e,listado_detalle)}}>
+                                                                <option value="">[Seleccione]</option>
+                                                                <option value="1">Talla 1</option>
+                                                                <option value="2">Talla 2</option>
+                                                                <option value="3">Talla 3</option>
+                                                                <option value="4">Talla 4</option>
                                                             </Input>
                                                         </td>
                                                         <td style={{textAlign:"right"}}>
-                                                            <Input className="form-control-sm" type="select">
-                                                                <option>Option 1</option>
+                                                        <Input name='talla_3' className="form-control-sm" type="select" value={listado_detalle.talla_3} onChange={(e)=>{this.updateFormCandidatos(e,listado_detalle)}}>
+                                                                <option value="">[Seleccione]</option>
+                                                                <option value="1">Talla 1</option>
+                                                                <option value="2">Talla 2</option>
+                                                                <option value="3">Talla 3</option>
+                                                                <option value="4">Talla 4</option>
                                                             </Input>
                                                         </td>
                                                     </tr>
@@ -282,7 +373,13 @@ class Registrodatosalta extends React.Component {
                             </Table>
                         </CardBody>
                         <CardFooter>
-
+                                {/* <Row>
+                                    <Col md="11">
+                                    </Col>
+                                    <Col md="1" style={{float:"right" }}>
+                                        <Button color='primary' className="btn btn-sm">Guardar</Button>
+                                    </Col>
+                                </Row> */}
                         </CardFooter>
                 </Card>
 

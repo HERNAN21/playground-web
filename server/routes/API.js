@@ -244,7 +244,7 @@ api.post(api_name + '/listadosolicitudcandidatos', (req, res) => {
         " sol.fecha_estimada_inicio,sol.id_plazo,sol.nombre_cliente, " +
         " sol.descripcion_servicio,sol.volumen_motivo,sol.inicio_estimado_tiempo,sol.estimacion_duracion_tiempo, " +
         " sol.observaciones,sol.descripcion,sol.remuneracion,sol.fecha_registro,sol.usuario_registro, " +
-        " sol.fecha_modificacion,sol.usuario_modificacion,sol.estado,sol.estado_vicepresidencia, " +
+        " sol.fecha_modificacion,sol.usuario_modificacion,sol.estado,sol.estado as estado_des,sol.estado as estado_des1,sol.estado_vicepresidencia, " +
         " sol.glosa,sol.sociedad,sol.lider_uo,sol.codigo_uo,sol.descripcion_uo,sol.cod_divicion,sol.cod_sub_div, " +
         " sol.sctr,sol.id_area_personal,sol.id_relacion_personal,sol.file_dp,sol.direccion, " +
         // data users
@@ -325,7 +325,7 @@ api.get(api_name + '/listado/candidatos', (req, res) => {
         " WHEN estado=0 THEN 'Activo' " +
         " WHEN estado=1 THEN 'Inactivo' " +
         " END as estado_des, " +
-        " id_sede_entrevista,contacto_sede,fecha_entrevista,prioridad,codigo_posicion " +
+        " id_sede_entrevista,contacto_sede,fecha_entrevista,prioridad,codigo_posicion, " +
         " rtrim(codigo_trabajo) as codigo_trabajo, genero,rtrim(talla_1) as talla_1,rtrim(talla_2) as talla_2,rtrim(talla_3) as talla_3 "+
         " from solicitud_candidato ";
     db.sequelize.query(query, { type: db.sequelize.QueryTypes.SELECT })
@@ -348,7 +348,7 @@ api.put(api_name + '/updatecandidato', (req, res) => {
             fecha_entrevista = "'" + element.fecha_entrevista + "'";
         }
 
-        var query = " update  candidato_solicitud set id_sede_entrevista='" + element.id_sede_entrevista + "', contacto_sede='" + element.contacto_sede +
+        var query = " update  solicitud_candidato set id_sede_entrevista='" + element.id_sede_entrevista + "', contacto_sede='" + element.contacto_sede +
             "', fecha_entrevista=" + fecha_entrevista + ", estado='" + element.estado + "' ,prioridad='" + element.prioridad + "' where id='" + element.candidato_id + "' ";
 
         db.sequelize.query(query, { type: db.sequelize.QueryTypes.UPDATE })
@@ -367,7 +367,7 @@ api.put(api_name + '/updatecandidato', (req, res) => {
 api.put(api_name + '/updatecandidatoposicion', (req, res) => {
     for (let i = 0; i < req.body.length; i++) {
         const element = req.body[i];
-        var query = " update  candidato_solicitud set codigo_posicion='" + element.codigo_posicion + "' where id='" + element.candidato_id + "' ";
+        var query = " update  solicitud_candidato set codigo_posicion='" + element.codigo_posicion + "' where id='" + element.candidato_id + "' ";
         db.sequelize.query(query, { type: db.sequelize.QueryTypes.UPDATE })
             .then((result) => {
                 res.json({ 'respuesta': 'success', 'result': result });
@@ -381,20 +381,27 @@ api.put(api_name + '/updatecandidatoposicion', (req, res) => {
 
 // Update candidato datos
 api.put(api_name+'/updatecandidatodatos',(req,res)=>{
-    var query= " update candidato_solicitud set codigo_trabajo=:codigo_trabajo, genero=:genero, talla_1=:talla_1, talla_2=:talla_2, talla_3=:talla_3 where id=:id ";
-    var values={
-        codigo_trabajo:req.body.codigo_trabajo,
-
+    for (let i = 0; i < req.body.length; i++) {
+        var query= " update solicitud_candidato set codigo_trabajo=:codigo_trabajo, genero=:genero, talla_1=:talla_1, talla_2=:talla_2, talla_3=:talla_3 where id=:id_candidato ";
+        var data={
+            codigo_trabajo:req.body[i].codigo_trabajo,
+            genero:req.body[i].genero,
+            talla_1:req.body[i].talla_1,
+            talla_2:req.body[i].talla_2,
+            talla_3:req.body[i].talla_3,
+            id_candidato:req.body[i].id
+        }
+        db.sequelize.query(query, { replacements: data, type: db.sequelize.QueryTypes.UPDATE })
+        .then((result)=>{
+            res.json({'respuesta':'success','result':result})
+            console.log(result);
+        })
+        .catch((e)=>{
+            res.json({'respuesta':'error','result':e})
+            console.log(e)
+        })
     }
-    db.sequelize.query(query+values,{type:db.sequelize.QueryTypes.UPDATE})
-    .then((result)=>{
-        res.json({'respuesta':'success','result':result})
-    })
-    .catch((e)=>{
-        res.json({'respuesta':'error','result':e})
-    })
 });
-
 
 
 
