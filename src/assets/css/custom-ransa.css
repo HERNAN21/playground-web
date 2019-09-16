@@ -1,0 +1,8 @@
+@charset "UTF-8";
+
+.ransa-bg-info {
+    background-color: #009B3A !important; }
+
+.ransa-bg-gradient-info{
+    background: linear-gradient(87deg, #009B3A 0, #009B3A 100%) !important; }
+
