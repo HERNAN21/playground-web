@@ -521,46 +521,56 @@ api.get(api_name + '/solicitud_baja', (req, res) => {
 api.post(api_name+'/solicituddeuda',(req,res)=>{
     // console.log(req.body);
     for (let i = 0; i < req.body.length; i++) {
-        if (req.body[i].id_solicitud==null) {
-            var query='insert into solicitud_baja_deuda(id_solicitud,id_tipo,tipo_moneda,monto,estado,usuario_creacion,fecha_creacion) ';
-            var values= ' values(:id_solicitud,:id_tipo,:tipo_moneda,:monto,:estado,:usuario_creacion,now())';
-            var data ={
-                id_solicitud:req.body[i].id,
-                id_tipo:req.body[i].id_tipo,
-                tipo_moneda:req.body[i].tipo_moneda,
-                monto:req.body[i].monto,
-                estado:req.body[i].estado,
-                usuario_creacion:req.body[i].usuario_creacion
-            }
-            // console.log(data);
-            db.sequelize.query(query+values, { replacements: data, type: db.sequelize.QueryTypes.INSERT })
-            .then((result)=>{
-                res.json({'respuesta':'success','result':result});
-                console.log(result);
-            })
-            .catch((e)=>{
-                res.json({'respuesta':'error','result':e})
-                console.log(e);
-            })
-        }else{
-            var query = " update solicitud_baja_deuda set id_tipo=:id_tipo, tipo_moneda=:tipo_moneda, monto=:monto, estado=:estado where id_solicitud=:id_solicitud ";
-            var data ={
-                id_solicitud:req.body[i].id_solicitud,
-                id_tipo:req.body[i].id_tipo,
-                tipo_moneda:req.body[i].tipo_moneda,
-                monto:req.body[i].monto,
-                estado:req.body[i].estado
-            }
-            db.sequelize.query(query, { replacements: data, type: db.sequelize.QueryTypes.UPDATE })
-            .then((result)=>{
-                res.json({'respuesta':'success','result':result});
-                console.log(result);
-            })
-            .catch((e)=>{
-                res.json({'respuesta':'error','result':e})
-                console.log(e);
-            })
+        var dataselect={
+            id_solicitud:req.body[i].id,
+            id_tipo:req.body[i].id_tipo
         }
+        db.sequelize.query('select * from solicitud_baja_deuda where id_solicitud=:id_solicitud and id_tipo=:id_tipo',{ replacements: dataselect, type: db.sequelize.QueryTypes.SELECT })
+        .then((result)=>{
+            if (result.length>0) {
+                var query = " update solicitud_baja_deuda set id_tipo=:id_tipo, tipo_moneda=:tipo_moneda, monto=:monto, estado=:estado where id_solicitud=:id_solicitud ";
+                var data ={
+                    id_solicitud:req.body[i].id_solicitud,
+                    id_tipo:req.body[i].id_tipo,
+                    tipo_moneda:req.body[i].tipo_moneda,
+                    monto:req.body[i].monto,
+                    estado:req.body[i].estado
+                }
+                db.sequelize.query(query, { replacements: data, type: db.sequelize.QueryTypes.UPDATE })
+                .then((result)=>{
+                    res.json({'respuesta':'success','result':result});
+                    console.log(result);
+                })
+                .catch((e)=>{
+                    res.json({'respuesta':'error','result':e})
+                    console.log(e);
+                })
+            }else{
+                var query='insert into solicitud_baja_deuda(id_solicitud,id_tipo,tipo_moneda,monto,estado,usuario_creacion,fecha_creacion) ';
+                var values= ' values(:id_solicitud,:id_tipo,:tipo_moneda,:monto,:estado,:usuario_creacion,now())';
+                var data ={
+                    id_solicitud:req.body[i].id,
+                    id_tipo:req.body[i].id_tipo,
+                    tipo_moneda:req.body[i].tipo_moneda,
+                    monto:req.body[i].monto,
+                    estado:req.body[i].estado,
+                    usuario_creacion:req.body[i].usuario_creacion
+                }
+                // console.log(data);
+                db.sequelize.query(query+values, { replacements: data, type: db.sequelize.QueryTypes.INSERT })
+                .then((result)=>{
+                    res.json({'respuesta':'success','result':result});
+                    console.log(result);
+                })
+                .catch((e)=>{
+                    res.json({'respuesta':'error','result':e})
+                    console.log(e);
+                })
+            }
+        })
+        // if (req.body[i].id_solicitud==null || req.body.id_tipo==null) {
+        // }else{
+        // }
     }
 
 })

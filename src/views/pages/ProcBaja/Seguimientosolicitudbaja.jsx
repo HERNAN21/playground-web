@@ -53,7 +53,7 @@ class Seguimientosolicitudbaja extends React.Component {
     formInserDeuda=(e,data)=>{
         var update_data =this.state.data_solicitud_list;
         for (let i = 0; i < update_data.length; i++) {
-            if (update_data[i].id==data.id) {
+            if (update_data[i].id==data.id || update_data[i].id_tipo==data.id_tipo) {
                 this.state.data_solicitud_list[i].usuario_creacion='HROJAS';
                 if (e.target.name=='estado') {
                     this.state.data_solicitud_list[i].estado=1;
