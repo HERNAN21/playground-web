@@ -2,7 +2,7 @@ import React from "react";
 
 
 // reactstrap components
-import {Badge,Button,Card,CardHeader,CardBody,CardFooter,Table,Container,Row,Col,FormGroup,Label,InputGroup,Input,InputGroupAddon,InputGroupText} from "reactstrap";
+import {Badge,Button,Card,CardHeader,CardBody,CardFooter,Table,Container,Row,Col,FormGroup,Label,InputGroup,Input,InputGroupAddon,InputGroupText,Modal, ModalHeader, ModalBody, ModalFooter} from "reactstrap";
 // core components
 import SimpleHeader from "components/Headers/SimpleHeader.jsx";
 import { server, api_name,estado_proceso_de_altas} from "variables/general.jsx";
@@ -28,7 +28,12 @@ class Registrodatosalta extends React.Component {
             data_ver:{
                 solicitud_id:'',
                 puesto_des:'',
-            }
+            },
+
+            equipos_accesos:[],
+            solicitud_detalle:[],
+            modal: false,
+
             
 
         }
@@ -41,8 +46,18 @@ class Registrodatosalta extends React.Component {
             }
         }.bind(this));
 
-        
+        fetch(this.state.server + api_name + '/detallesolicitud')
+        .then(response => response.json())
+        .then(function (data) {
+            if (data.respuesta=='success') {
+                this.setState({ equipos_accesos: data.result});
+            }else{
+                this.setState({equipos_accesos:''});
+            }
+        }.bind(this));
 
+        
+        this.showModalDetalle = this.showModalDetalle.bind(this);
 
     }
 
@@ -173,11 +188,32 @@ class Registrodatosalta extends React.Component {
         }.bind(this))
     }
 
+
+    // SHOW MODAL DETALLS
+    showModalDetalle=(e,data)=>{
+        var datos_detalle=this.state.equipos_accesos;
+        var data_push=[];
+        if (data!=null) {
+            for (let i = 0; i < datos_detalle.length; i++) {
+                if (datos_detalle[i].id_solicitud==data.id) {
+                    data_push.push(datos_detalle[i]);
+                }    
+            }
+            this.setState({solicitud_detalle:data_push});
+        }
+
+        this.setState(prevState => ({
+            modal: !prevState.modal
+        }));
+
+    }
+
     render() {
         // console.log(this.state.solicitud_data_all)
         const data_list=this.state.solicitud_data_all;
-        console.log(this.state.data_solicitud_detall_candidatos);
+        // console.log(this.state.data_solicitud_detall_candidatos);
         var listado_detalle=this.state.data_solicitud_detall_candidatos;
+        var detalle_solicitud=this.state.solicitud_detalle;
         return (
             <>
              <SimpleHeader name="Registro de Datos de Alta" parentName="Tables" />
@@ -252,9 +288,9 @@ class Registrodatosalta extends React.Component {
                                                             {listado.direccion}
                                                         </td>
                                                         <td style={{textAlign:"right"}}>
-                                                            <Button className="btn btn-sm" color="primary">
-                                                                Ver Detalle +
-                                                                {/* <i class="fa fa-info" aria-hidden="true"></i> */}
+                                                            <Button className="btn btn-sm" color="primary" onClick={(e)=>this.showModalDetalle(e,listado)}>
+                                                                <span> Ver Detalle +</span> 
+                                                                <i class="fa fa-info" aria-hidden="true"></i>
                                                             </Button>
                                                         </td>
                                                     </tr>
@@ -383,6 +419,58 @@ class Registrodatosalta extends React.Component {
                 </Card>
 
             </Container>
+            {/* MODAL DETALLS */}
+            <Modal isOpen={this.state.modal} showModalDetalle={this.showModalDetalle} className={this.props.className} style={{marginTop:"150px"}} size="md">
+                <ModalBody>
+                    <Card>
+                        {/* <CardHeader style={{textAlign:"center"}}><b>Registrar</b></CardHeader> */}
+                        <CardBody>
+                            <Row>
+                                <Col md="12">
+                                    <Table>
+                                        <thead>
+                                            <tr>
+                                                <th></th>
+                                                <th style={{textAlign:"center"}}> <b>EQUIPOS Y ACCESOS </b></th>
+                                                <th></th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {
+                                                detalle_solicitud.map((listado,key)=>{
+                                                    return (<>
+                                                        <tr>
+                                                            <td>{(key+1)}</td>
+                                                            <td>{listado.grupo}</td>
+                                                            <td>{listado.descripcion}</td>
+                                                        </tr>
+                                                    </>);
+                                                })
+                                            }
+                                            
+                                        </tbody>
+                                        <tfoot>
+
+                                        </tfoot>
+                                    </Table>
+                                </Col>
+                               
+                            </Row>
+                            <br/>
+                            <Row>
+                                <Col md="12">
+                                    <div style={{float:"right", marginTop:"12px"}}>
+                                        {/* cerrar modal por verse this.ModalNuevo */}
+                                        <Button color="danger" className="btn btn-sm" onClick={(e)=>this.showModalDetalle(e,null)}>Cerrar</Button>
+                                    </div>
+                                </Col>
+                            </Row>
+
+                        </CardBody>
+                    </Card>
+                </ModalBody>
+                
+            </Modal>
             
         </>
     );

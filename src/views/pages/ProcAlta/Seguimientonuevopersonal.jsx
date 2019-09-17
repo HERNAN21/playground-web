@@ -163,7 +163,7 @@ class Seguimientonuevopersonal extends React.Component {
 
    
     render() {
-        console.log(this.state.solicitud_detalle)
+        // console.log(this.state.solicitud_detalle)
         var detalle_solicitud=this.state.solicitud_detalle;
         var solicitud_data=this.state.solicitud_data_all;
         return (

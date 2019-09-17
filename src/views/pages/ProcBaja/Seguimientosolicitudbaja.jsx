@@ -31,6 +31,7 @@ class Seguimientosolicitudbaja extends React.Component {
 
     render() {
         const data_solicitud_list = this.state.data_solicitud_list;
+        console.log(data_solicitud_list);
         return (
             <>
                 <SimpleHeader name="Seguimiento de Solicitud de Baja" parentName="Tables" />

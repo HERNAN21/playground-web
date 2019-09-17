@@ -516,6 +516,30 @@ api.get(api_name + '/solicitud_baja', (req, res) => {
 })
 //FIN DE SOLICITUD DE BAJA
 
+// SEGIMIENTO DE SOLICITUD DE ALTA 
+
+api.post(api_name+'/solicituddeuda',(req,res)=>{
+    var query='insert into solicitud_baja_deuda(id_solicitud,id_tipo,monto,estado,usuario_creacion,fecha_creacion) ';
+    var values= ' values(:id_solicitud,:id_tipo,:monto,:estado,:usuario_creacion,:fecha_creacion';
+    var data ={
+        id_solicitud:req.body.id_solicitud,
+        id_tipo:req.body.id_tipo,
+        monto:req.body.monto,
+        estado:req.body.estado,
+        usuario_creacion:req.body.usuario_creacion,
+        fecha_creacion:req.body.fecha_creacion
+    }
+    console.log(req.body);
+    // db.sequelize.query(query+values, { replacements: data, type: db.sequelize.QueryTypes.UPDATE })
+    // .then((result)=>{
+    //     res.json({'respuesta':'sucsese','result':result});
+    // })
+    // .catch((e)=>{
+    //     res.json({'respuesta':'error','result':e})
+    // })
+
+})
+
 
 
 

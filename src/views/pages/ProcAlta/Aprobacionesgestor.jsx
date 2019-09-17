@@ -129,6 +129,10 @@ class Aprobacionesgestor extends React.Component {
                             data.result[i].estado_des=estado_proceso_de_altas[6].value;
                             data.result[i].estado=true;
                             data.result[i].estado_des1=true;
+                        }else if(data.result[i].estado==11){
+                            data.result[i].estado_des=estado_proceso_de_altas[10].value;
+                            data.result[i].estado=true;
+                            data.result[i].estado_des1=true;
                         }
 
 

@@ -42,7 +42,7 @@ class Creacionsolicitudbaja extends React.Component {
 
         };
 
-        fetch(this.state.server + api_name + '/service_grupo')
+        fetch(this.state.server + api_name + '/general')
             .then(response => response.json())
             .then(function (data) {
                 var tipoBaja = [];
