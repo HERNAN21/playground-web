@@ -519,24 +519,49 @@ api.get(api_name + '/solicitud_baja', (req, res) => {
 // SEGIMIENTO DE SOLICITUD DE ALTA 
 
 api.post(api_name+'/solicituddeuda',(req,res)=>{
-    var query='insert into solicitud_baja_deuda(id_solicitud,id_tipo,monto,estado,usuario_creacion,fecha_creacion) ';
-    var values= ' values(:id_solicitud,:id_tipo,:monto,:estado,:usuario_creacion,:fecha_creacion';
-    var data ={
-        id_solicitud:req.body.id_solicitud,
-        id_tipo:req.body.id_tipo,
-        monto:req.body.monto,
-        estado:req.body.estado,
-        usuario_creacion:req.body.usuario_creacion,
-        fecha_creacion:req.body.fecha_creacion
+    // console.log(req.body);
+    for (let i = 0; i < req.body.length; i++) {
+        if (req.body[i].id_solicitud==null) {
+            var query='insert into solicitud_baja_deuda(id_solicitud,id_tipo,tipo_moneda,monto,estado,usuario_creacion,fecha_creacion) ';
+            var values= ' values(:id_solicitud,:id_tipo,:tipo_moneda,:monto,:estado,:usuario_creacion,now())';
+            var data ={
+                id_solicitud:req.body[i].id,
+                id_tipo:req.body[i].id_tipo,
+                tipo_moneda:req.body[i].tipo_moneda,
+                monto:req.body[i].monto,
+                estado:req.body[i].estado,
+                usuario_creacion:req.body[i].usuario_creacion
+            }
+            // console.log(data);
+            db.sequelize.query(query+values, { replacements: data, type: db.sequelize.QueryTypes.UPDATE })
+            .then((result)=>{
+                res.json({'respuesta':'success','result':result});
+                console.log(result);
+            })
+            .catch((e)=>{
+                res.json({'respuesta':'error','result':e})
+                console.log(e);
+            })
+        }else{
+            var query = " update solicitud_baja_deuda set id_tipo=:id_tipo, tipo_moneda=:tipo_moneda, monto=:monto, estado=:estado where id_solicitud=:id_solicitud ";
+            var data ={
+                id_solicitud:req.body[i].id_solicitud,
+                id_tipo:req.body[i].id_tipo,
+                tipo_moneda:req.body[i].tipo_moneda,
+                monto:req.body[i].monto,
+                estado:req.body[i].estado
+            }
+            db.sequelize.query(query, { replacements: data, type: db.sequelize.QueryTypes.UPDATE })
+            .then((result)=>{
+                res.json({'respuesta':'success','result':result});
+                console.log(result);
+            })
+            .catch((e)=>{
+                res.json({'respuesta':'error','result':e})
+                console.log(e);
+            })
+        }
     }
-    console.log(req.body);
-    // db.sequelize.query(query+values, { replacements: data, type: db.sequelize.QueryTypes.UPDATE })
-    // .then((result)=>{
-    //     res.json({'respuesta':'sucsese','result':result});
-    // })
-    // .catch((e)=>{
-    //     res.json({'respuesta':'error','result':e})
-    // })
 
 })
 

@@ -50,10 +50,10 @@ estado_proceso_de_altas.push({id:10,value:'Creado por Excellia'});
 estado_proceso_de_altas.push({id:11,value:'Finalizado'});
 
 const estado_proceso_de_bajas=[];
-estado_proceso_de_altas.push({id:1,value:'Creado'});
-estado_proceso_de_altas.push({id:2,value:'Pendiente de Liquidación'});
-estado_proceso_de_altas.push({id:3,value:'Enviado a Administración de Personal'});
-estado_proceso_de_altas.push({id:0,value:'Finalizado'});
+estado_proceso_de_bajas.push({id:1,value:'Creado'});
+estado_proceso_de_bajas.push({id:2,value:'Pendiente de Liquidación'});
+estado_proceso_de_bajas.push({id:3,value:'Enviado a Administración de Personal'});
+estado_proceso_de_bajas.push({id:0,value:'Finalizado'});
 
 
 

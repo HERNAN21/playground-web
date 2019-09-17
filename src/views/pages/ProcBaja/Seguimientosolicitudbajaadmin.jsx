@@ -4,9 +4,40 @@ import React from "react";
 import {Badge,Button,Card,CardHeader,CardBody,CardFooter,Table,Container,Row,Col,FormGroup,Label,InputGroup,Input,InputGroupAddon,InputGroupText} from "reactstrap";
 // core components
 import SimpleHeader from "components/Headers/SimpleHeader.jsx";
+import { server, api_name,estado_proceso_de_bajas } from "variables/general.jsx";
+import ReactBSAlert from "react-bootstrap-sweetalert";
 
 class Seguimientosolicitudbajaadmin extends React.Component {
+    constructor(props){
+        super(props)
+        this.state={
+            server:server,
+            data_solicitud_list:[],
+            estado_proceso_de_bajas:estado_proceso_de_bajas
+
+        }
+
+
+    }
+
+    cargarData = _ => {
+        let self = this;
+        fetch(this.state.server + api_name + '/solicitud_baja')
+            .then(response => response.json())
+            .then(function (data) {
+                self.setState({data_solicitud_list:data})
+            });
+    }
+
+    actualizarEstado=()=>{
+        console.log('update status');
+    }
+
+
     render() {
+        console.log(this.state.data_solicitud_list);
+        var data_baja_listar=this.state.data_solicitud_list;
+        const data_estado_lis=this.state.estado_proceso_de_bajas;
         return (
             <>
              <SimpleHeader name="Seguimiento de Solicitud de Baja" parentName="Tables" />
@@ -20,7 +51,7 @@ class Seguimientosolicitudbajaadmin extends React.Component {
                                             <Input className="form-control-sm" placeholder="" type="text"/>
                                             <InputGroupAddon addonType="append">
                                             <InputGroupText className="form-control-sm" style={{margin:0, padding:0}}>
-                                                <Button className="fas fa-search btn btn-sm " style={{width:"100%"}}/>
+                                                <Button className="fas fa-search btn btn-sm " style={{width:"100%"}} onClick={this.cargarData}/>
                                             </InputGroupText>
                                             </InputGroupAddon>
                                         </InputGroup>
@@ -31,7 +62,7 @@ class Seguimientosolicitudbajaadmin extends React.Component {
                                             <Input className="form-control-sm" placeholder="" type="text"/>
                                             <InputGroupAddon addonType="append">
                                             <InputGroupText className="form-control-sm" style={{margin:0, padding:0}}>
-                                                <Button className="fas fa-search btn btn-sm " style={{width:"100%"}}/>
+                                                <Button className="fas fa-search btn btn-sm " style={{width:"100%"}} onClick={this.cargarData} />
                                             </InputGroupText>
                                             </InputGroupAddon>
                                         </InputGroup>
@@ -45,53 +76,69 @@ class Seguimientosolicitudbajaadmin extends React.Component {
                                     <Table className="align-items-center table-flush" responsive size="sm">
                                         <thead className="thead-light">
                                             <tr>
-                                                <th style={{textAlign:"center"}}>Nro. Solicitud</th>
-                                                <th style={{textAlign:"center"}}>Código Tabajador</th>
+                                                <th style={{textAlign:"center"}}>Nro. <br/> Solicitud</th>
+                                                <th style={{textAlign:"center"}}>Código <br/> Tabajador</th>
                                                 <th style={{textAlign:"center"}}>Estado</th>
                                                 <th style={{textAlign:"center"}}>Fecha Creación</th>
                                                 <th style={{textAlign:"center"}}>Descripción de Puesto</th>
                                                 <th style={{textAlign:"center"}}>Jefe Directo</th>
-                                                <th style={{textAlign:"center"}}>Fecha de Cese</th>
+                                                <th style={{textAlign:"center"}}>Fecha <br/> de Cese</th>
                                                 <th style={{textAlign:"center"}}>Ubicación</th>
                                                 <th style={{textAlign:"center"}}>Tiempo faltante <br/> para cierre</th>
                                                 <th style={{textAlign:"center"}}>¿Actualizar Estado? </th>
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            <tr>
-                                                <td className="table-user">
-                                                    <a className="font-weight-bold" href="#pablo" onClick={this.ModalRemoneracion}>100{this.props.buttonLabel}</a>
-                                                </td>
-                                                <td className="table-user">
-                                                    <b> 000001</b>
-                                                </td>
-                                                <td className="table-user">
-                                                    <Input type="select" className="form-control-sm">
-                                                        <option >Option 1</option>
-                                                    </Input>
-                                                </td>
-                                                <td className="table-user">
-                                                    <b>Test Test</b>
-                                                </td>
-                                                <td>
-                                                    Descripcion
-                                                </td>
-                                                <td className="table-user">
-                                                    <b>02/09/2019</b>
-                                                </td>
-                                                <td>
-                                                    Sede San jose
-                                                </td>
-                                                <td style={{textAlign:"right"}}>
-                                                    Lugar
-                                                </td>
-                                                <td>
-                                                    02:00
-                                                </td>
-                                                <td style={{textAlign:"center"}}>
-                                                    <Button className="btn btn-sm" color="success">Actualizar</Button>
-                                                </td>
-                                            </tr>
+                                            {
+                                                data_baja_listar.map((listado,key)=>{
+                                                    return (
+                                                        <>
+                                                            <tr>
+                                                                <td className="table-user">
+                                                                    <a className="font-weight-bold" href="#pablo" onClick={this.ModalRemoneracion}>{listado.id}{this.props.buttonLabel}</a>
+                                                                </td>
+                                                                <td className="table-user">
+                                                                    <b> {listado.id_trabajador}</b>
+                                                                </td>
+                                                                <td className="table-user">
+                                                                    <Input type="select" className="form-control-sm" value={listado.estado_solicitud}>
+                                                                        <option value="">[Seleccione]</option>
+                                                                        {
+                                                                           data_estado_lis.map((listado_estado,i)=>{
+                                                                                return (<>
+                                                                                    <option value={listado_estado.id}>{listado_estado.value}</option>
+                                                                                </>
+                                                                               )
+                                                                           }) 
+                                                                        }
+                                                                    </Input>
+                                                                </td>
+                                                                <td className="table-user">
+                                                                    <b>{listado.fecha_registro}</b>
+                                                                </td>
+                                                                <td>
+                                                                    {listado.observaciones}
+                                                                </td>
+                                                                <td className="table-user">
+                                                                    <b>{listado.nombre_jefe}</b>
+                                                                </td>
+                                                                <td>
+                                                                    {listado.fecha_cese}
+                                                                </td>
+                                                                <td style={{textAlign:"right"}}>
+                                                                    Lugar
+                                                                </td>
+                                                                <td>
+                                                                    02:00
+                                                                </td>
+                                                                <td style={{textAlign:"center"}}>
+                                                                    <Button className="btn btn-sm" color="success" onClick={this.actualizarEstado}>Actualizar</Button>
+                                                                </td>
+                                                            </tr>
+                                                        </>
+                                                    );
+                                                })
+                                            }
                                         </tbody>
                                     </Table>
                                 </Col>
