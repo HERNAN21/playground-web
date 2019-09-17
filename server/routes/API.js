@@ -100,9 +100,7 @@ api.post(api_name + '/solicitudes', (req, res) => {
 })
 
 
-/*api.post(api_name + '/solicitudestest', (req, res) => {
-    console.log(req.body.id_aprobador);
-});*/
+
 
 // Datos Aprobaciones Pendientes 
 api.post(api_name + '/aprobacionespendientes', (req, res) => {
@@ -189,6 +187,26 @@ api.put(api_name + '/updatestatusall', (req, res) => {
         })
     }
 });
+
+
+// DETALL SOLICITUD
+
+api.get(api_name + '/detallesolicitud', (req, res) => {
+    var query='select * from solicitud_detalle as sd inner join general as gen on gen.codigo=sd.id_grupo and gen.grupo=sd.id_grupo_tipo ';
+    db.sequelize
+        .query(query, { type: db.sequelize.QueryTypes.SELECT })
+        .then((result) => {
+            res.json({'respuesta':'success','result':result});
+        })
+        .catch((e)=>{
+            res.json({'respuesta':'error','result':e});
+        })
+});
+
+
+
+
+
 
 
 // Inssert remuneracion

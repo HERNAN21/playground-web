@@ -7,6 +7,7 @@ import SimpleHeader from "components/Headers/SimpleHeader.jsx";
 import { server, api_name,estado_proceso_de_altas} from "variables/general.jsx";
 import 'react-block-ui/style.css';
 import ReactBSAlert from "react-bootstrap-sweetalert";
+import { runInThisContext } from "vm";
 
 var format = require('date-format');
 
@@ -31,18 +32,14 @@ class Seguimientonuevopersonal extends React.Component {
         this.showModalDetalle = this.showModalDetalle.bind(this);
 
 
-        fetch(this.state.server + api_name + '/general')
+        fetch(this.state.server + api_name + '/detallesolicitud')
         .then(response => response.json())
         .then(function (data) {
-            var equipos_accesos_push = [];
-            for (let i = 0; i < data.length; i++) {
-                const datos = data[i];
-                if (datos.grupo == 'EQUIPO' || datos.grupo == 'ACCESOS') {
-                    equipos_accesos_push.push(datos);
-                }
+            if (data.respuesta=='success') {
+                this.setState({ equipos_accesos: data.result});
+            }else{
+                this.setState({equipos_accesos:''});
             }
-            this.setState({ equipos_accesos: equipos_accesos_push });
-            
         }.bind(this));
     }
 
@@ -86,16 +83,21 @@ class Seguimientonuevopersonal extends React.Component {
 
     // SHOW MODAL DETALLS
     showModalDetalle=(e,data)=>{
-        // console.log(data);
-        console.log(this.state.equipos_accesos);
+        var datos_detalle=this.state.equipos_accesos;
+        var data_push=[];
+        if (data!=null) {
+            for (let i = 0; i < datos_detalle.length; i++) {
+                if (datos_detalle[i].id_solicitud==data.id) {
+                    data_push.push(datos_detalle[i]);
+                }    
+            }
+            this.setState({solicitud_detalle:data_push});
+        }
 
         this.setState(prevState => ({
             modal: !prevState.modal
         }));
-        
-        // console.log('show modal');
-        // equipos_accesos
-        // solicitud_detalle
+
     }
 
     dataEstadoChange=(e,data)=>{
@@ -161,7 +163,8 @@ class Seguimientonuevopersonal extends React.Component {
 
    
     render() {
-        // console.log(this.state.solicitud_data_all);
+        console.log(this.state.solicitud_detalle)
+        var detalle_solicitud=this.state.solicitud_detalle;
         var solicitud_data=this.state.solicitud_data_all;
         return (
             <>
@@ -277,79 +280,48 @@ class Seguimientonuevopersonal extends React.Component {
                 </Card>
             </Container>
             {/* MODAL DETALLS */}
-            <Modal isOpen={this.state.modal} showModalDetalle={this.showModalDetalle} className={this.props.className} style={{marginTop:"150px"}} size="lg">
+            <Modal isOpen={this.state.modal} showModalDetalle={this.showModalDetalle} className={this.props.className} style={{marginTop:"150px"}} size="md">
                 <ModalBody>
                     <Card>
                         {/* <CardHeader style={{textAlign:"center"}}><b>Registrar</b></CardHeader> */}
                         <CardBody>
                             <Row>
-                                <Col md="6">
+                                <Col md="12">
                                     <Table>
                                         <thead>
                                             <tr>
-                                                <th style={{textAlign:"center"}}>EQUIPOS</th>
-                                                
+                                                <th></th>
+                                                <th style={{textAlign:"center"}}> <b>EQUIPOS Y ACCESOS </b></th>
+                                                <th></th>
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            {/* {
-                                                data_candidato_solicitud_list.map((listar,key)=>{
+                                            {
+                                                detalle_solicitud.map((listado,key)=>{
                                                     return (<>
                                                         <tr>
-                                                            <td>Candidato {(key+1)}</td>
-                                                            <td>{listar.numero_documento}</td>
-                                                            <td>{listar.nombres+' - '+ listar.apellido_paterno+', '+listar.apellido_materno}</td>
-                                                            <td>
-                                                                <Input className="form-control-sm" type="text" onKeyUp={(e)=>this.dataCodigoPosicion({value:e.target.value,'listado':listar})} ></Input>
-                                                            </td>
-                                                            <td style={{textAlign:"center"}}><Input type="checkbox"></Input> </td>
+                                                            <td>{(key+1)}</td>
+                                                            <td>{listado.grupo}</td>
+                                                            <td>{listado.descripcion}</td>
                                                         </tr>
                                                     </>);
                                                 })
-                                            } */}
+                                            }
+                                            
                                         </tbody>
                                         <tfoot>
 
                                         </tfoot>
                                     </Table>
                                 </Col>
-                                <Col md="6">
-                                    <Table>
-                                        <thead>
-                                            <tr>
-                                                <th style={{textAlign:"center"}}>ACCESOS</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {/* {
-                                                data_candidato_solicitud_list.map((listar,key)=>{
-                                                    return (<>
-                                                        <tr>
-                                                            <td>Candidato {(key+1)}</td>
-                                                            <td>{listar.numero_documento}</td>
-                                                            <td>{listar.nombres+' - '+ listar.apellido_paterno+', '+listar.apellido_materno}</td>
-                                                            <td>
-                                                                <Input className="form-control-sm" type="text" onKeyUp={(e)=>this.dataCodigoPosicion({value:e.target.value,'listado':listar})} ></Input>
-                                                            </td>
-                                                            <td style={{textAlign:"center"}}><Input type="checkbox"></Input> </td>
-                                                        </tr>
-                                                    </>);
-                                                })
-                                            } */}
-                                        </tbody>
-                                        <tfoot>
-
-                                        </tfoot>
-                                    </Table>
-                                </Col>
+                               
                             </Row>
                             <br/>
                             <Row>
                                 <Col md="12">
-                                    <div style={{float:"right"}}>
+                                    <div style={{float:"right", marginTop:"12px"}}>
                                         {/* cerrar modal por verse this.ModalNuevo */}
-                                        <Button color="success" className="btn btn-sm" onClick={this.showModalDetalle}>Asignar Cargo</Button>
-                                        <Button color="danger" className="btn btn-sm" onClick={this.showModalDetalle}>Cerrar</Button>
+                                        <Button color="danger" className="btn btn-sm" onClick={(e)=>this.showModalDetalle(e,null)}>Cerrar</Button>
                                     </div>
                                 </Col>
                             </Row>
