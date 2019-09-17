@@ -533,7 +533,7 @@ api.post(api_name+'/solicituddeuda',(req,res)=>{
                 usuario_creacion:req.body[i].usuario_creacion
             }
             // console.log(data);
-            db.sequelize.query(query+values, { replacements: data, type: db.sequelize.QueryTypes.UPDATE })
+            db.sequelize.query(query+values, { replacements: data, type: db.sequelize.QueryTypes.INSERT })
             .then((result)=>{
                 res.json({'respuesta':'success','result':result});
                 console.log(result);
@@ -564,6 +564,26 @@ api.post(api_name+'/solicituddeuda',(req,res)=>{
     }
 
 })
+
+
+api.put(api_name+'/updateestado',(req,res)=>{
+    var query = " update solicitud_baja set estado=:estado where id=:id ";
+    var data ={
+        estado: req.body.estado_solicitud,
+        id:req.body.id
+    }
+    db.sequelize.query(query, { replacements: data, type: db.sequelize.QueryTypes.UPDATE })
+    .then((result)=>{
+        res.json({'respuesta':'success','result':result});
+    })
+    .catch((e)=>{
+        res.json({'respuesta':'error','result':e})
+    })
+
+})
+
+
+// FIN SOLICITUD ALTA
 
 
 

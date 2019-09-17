@@ -29,9 +29,67 @@ class Seguimientosolicitudbajaadmin extends React.Component {
             });
     }
 
-    actualizarEstado=()=>{
-        console.log('update status');
+    dataFormChange=(e, data1)=>{
+        const data=this.state.data_solicitud_list;
+        for (let i = 0; i < data.length; i++) {
+            if (data[i].id==data1.id) {
+                this.state.data_solicitud_list[i].estado_solicitud=e.target.value;
+            }
+        }
+        this.forceUpdate();
     }
+
+    actualizarEstado=(e,dataupdate)=>{
+        let self=this;
+        fetch(this.state.server + api_name+ '/updateestado',{
+            method: 'PUT',
+            body: JSON.stringify(dataupdate),
+            headers: {'Content-Type':'application/json'}
+        })
+        .then(res=>res.json())
+        .then(function(data) {
+            if (data.respuesta=='success') {
+                self.customAlert(data.respuesta)
+            } else {
+                console.log(data.respuesta);
+            }
+        }.bind(this))
+
+        setTimeout(() => {
+            this.cargarData();
+        }, 100);
+    }
+
+    showDetalls=(e,data)=>{
+
+    }
+
+
+
+    customAlert = msg => {
+        this.setState({
+            alert: (
+                <ReactBSAlert
+                    success
+                    style={{ display: "block", marginTop: "-100px" }}
+                    title="Éxito"
+                    onConfirm={() => this.hideCustomAlert()}
+                    onCancel={() => this.hideCustomAlert()}
+                    confirmBtnBsStyle="success"
+                    confirmBtnText="Ok"
+                    btnSize=""
+                >
+                    {msg}
+                </ReactBSAlert>
+            )
+        });
+    }
+
+    hideCustomAlert = () => {
+        this.setState({
+            alert: null
+        });
+    };
 
 
     render() {
@@ -40,6 +98,7 @@ class Seguimientosolicitudbajaadmin extends React.Component {
         const data_estado_lis=this.state.estado_proceso_de_bajas;
         return (
             <>
+            {this.state.alert}
              <SimpleHeader name="Seguimiento de Solicitud de Baja" parentName="Tables" />
                 <Container className="mt--6" fluid>
                     <Card>
@@ -79,7 +138,7 @@ class Seguimientosolicitudbajaadmin extends React.Component {
                                                 <th style={{textAlign:"center"}}>Nro. <br/> Solicitud</th>
                                                 <th style={{textAlign:"center"}}>Código <br/> Tabajador</th>
                                                 <th style={{textAlign:"center"}}>Estado</th>
-                                                <th style={{textAlign:"center"}}>Fecha Creación</th>
+                                                <th style={{textAlign:"center"}}>Fecha <br/> Creación</th>
                                                 <th style={{textAlign:"center"}}>Descripción de Puesto</th>
                                                 <th style={{textAlign:"center"}}>Jefe Directo</th>
                                                 <th style={{textAlign:"center"}}>Fecha <br/> de Cese</th>
@@ -95,14 +154,13 @@ class Seguimientosolicitudbajaadmin extends React.Component {
                                                         <>
                                                             <tr>
                                                                 <td className="table-user">
-                                                                    <a className="font-weight-bold" href="#pablo" onClick={this.ModalRemoneracion}>{listado.id}{this.props.buttonLabel}</a>
+                                                                    <a className="font-weight-bold" href="#" onClick={(e)=>this.showDetalls(e,listado)}>{listado.id}</a>
                                                                 </td>
                                                                 <td className="table-user">
                                                                     <b> {listado.id_trabajador}</b>
                                                                 </td>
                                                                 <td className="table-user">
-                                                                    <Input type="select" className="form-control-sm" value={listado.estado_solicitud}>
-                                                                        <option value="">[Seleccione]</option>
+                                                                    <Input type="select" name="estado_solicitud" className="form-control-sm" value={listado.estado_solicitud} onChange={(e)=>this.dataFormChange(e,listado)}>
                                                                         {
                                                                            data_estado_lis.map((listado_estado,i)=>{
                                                                                 return (<>
@@ -132,7 +190,7 @@ class Seguimientosolicitudbajaadmin extends React.Component {
                                                                     02:00
                                                                 </td>
                                                                 <td style={{textAlign:"center"}}>
-                                                                    <Button className="btn btn-sm" color="success" onClick={this.actualizarEstado}>Actualizar</Button>
+                                                                    <Button className="btn btn-sm" color="success" onClick={(e)=>this.actualizarEstado(e,listado)}>Actualizar</Button>
                                                                 </td>
                                                             </tr>
                                                         </>
