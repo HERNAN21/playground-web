@@ -7,6 +7,14 @@ api.use(cors())
 process.env.SECRET_KEY = 'secret'
 const api_name = "/pdr_api/v1";
 
+const AmazonCognitoIdentity = require('amazon-cognito-identity-js');
+const CognitoUserPool = AmazonCognitoIdentity.CognitoUserPool;
+const AWS = require('aws-sdk');
+const request = require('request');
+const jwkToPem = require('jwk-to-pem');
+const jwt = require('jsonwebtoken');
+global.fetch = require('node-fetch');
+
 // Start api solicitud
 // Parameters
 api.get(api_name + '/general/:grupo', (req, res) => {
@@ -59,13 +67,13 @@ api.post(api_name + '/solicitudes', (req, res) => {
     var query = " insert into solicitud(id_aprobador,id_jefe_directo,id_puesto,cantidad,id_modalidad,fecha_estimada_inicio, " +
         " id_plazo,nombre_cliente,descripcion_servicio,volumen_motivo,inicio_estimado_tiempo,estimacion_duracion_tiempo, " +
         " observaciones, descripcion,fecha_registro,usuario_registro,estado )";
-    var data = " values(" + req.body.id_aprobador + "," + req.body.id_jefe_directo + ",'" + req.body.id_puesto + "','" 
-    + req.body.cantidad + "','" + req.body.id_modalidad +
-        "','" + req.body.fecha_estimada_inicio + "','" + req.body.id_plazo + "','" + req.body.nombre_cliente + "','" 
+    var data = " values(" + req.body.id_aprobador + "," + req.body.id_jefe_directo + ",'" + req.body.id_puesto + "','"
+        + req.body.cantidad + "','" + req.body.id_modalidad +
+        "','" + req.body.fecha_estimada_inicio + "','" + req.body.id_plazo + "','" + req.body.nombre_cliente + "','"
         + req.body.descripcion_servicio +
-        "','" + req.body.volumen_motivo + "','" + req.body.inicio_estimado_tiempo + "','" + 
+        "','" + req.body.volumen_motivo + "','" + req.body.inicio_estimado_tiempo + "','" +
         req.body.estimacion_duracion_tiempo + "','" + req.body.observaciones +
-        "','" + req.body.descripcion + "',now(),'" + req.body.usuario_registro 
+        "','" + req.body.descripcion + "',now(),'" + req.body.usuario_registro
         + "'," + req.body.estado + ")";
     db.sequelize.query(query + data, { type: db.sequelize.QueryTypes.INSERT })
         .then(function (data) {
@@ -73,8 +81,8 @@ api.post(api_name + '/solicitudes', (req, res) => {
                 var query_detalls = "insert into solicitud_detalle(id_solicitud,id_grupo,id_grupo_tipo,descripcion,fecha_registro,usuario_registro,estado)";
                 for (let i = 0; i < req.body.detalle_solicitud.length; i++) {
                     const element = req.body.detalle_solicitud[i];
-                    var data_detalls = " values((SELECT max(id) from solicitud)," + element.id_grupo + ",'" + element.id_grupo_tipo + "','',now(),'" 
-                    + req.body.usuario_registro + "',true) ";
+                    var data_detalls = " values((SELECT max(id) from solicitud)," + element.id_grupo + ",'" + element.id_grupo_tipo + "','',now(),'"
+                        + req.body.usuario_registro + "',true) ";
                     db.sequelize.query(query_detalls + data_detalls, { type: db.sequelize.QueryTypes.INSERT })
                         .then(function () {
                             res.json({
@@ -130,12 +138,12 @@ api.post(api_name + '/aprobacionespendientes', (req, res) => {
 
         " from public.solicitud as sol " +
         " inner join public.personal as us on us.codigo=sol.id_aprobador " +
-        " inner join public.personal as j_d on j_d.codigo=sol.id_jefe_directo "+
-        " inner join public.general as puesto on rtrim(sol.id_puesto)=rtrim(puesto.codigo) and 'PUESTO'=rtrim(puesto.grupo) "+
-        " inner join public.general as modalidad on rtrim(sol.id_modalidad)=rtrim(modalidad.codigo) and 'MODALIDAD'= rtrim(modalidad.grupo) "+
-        " inner join public.general as plazo on rtrim(sol.id_plazo)=rtrim(plazo.codigo) and 'PLAZO'=rtrim(plazo.grupo) "+
+        " inner join public.personal as j_d on j_d.codigo=sol.id_jefe_directo " +
+        " inner join public.general as puesto on rtrim(sol.id_puesto)=rtrim(puesto.codigo) and 'PUESTO'=rtrim(puesto.grupo) " +
+        " inner join public.general as modalidad on rtrim(sol.id_modalidad)=rtrim(modalidad.codigo) and 'MODALIDAD'= rtrim(modalidad.grupo) " +
+        " inner join public.general as plazo on rtrim(sol.id_plazo)=rtrim(plazo.codigo) and 'PLAZO'=rtrim(plazo.grupo) " +
         " where 0=0 ";
-        // " -- and sol.estado=1  ";
+    // " -- and sol.estado=1  ";
     var condicion1 = "";
     if (req.body.num_solicitud != "") {
         condicion1 = " and  sol.id='" + req.body.num_solicitud + "'";
@@ -161,8 +169,10 @@ api.post(api_name + '/aprobacionespendientes', (req, res) => {
 // update solicitud status 
 api.put(api_name + '/updatestatus', (req, res) => {
     var query = " update solicitud set estado=:estado where id=:id_solicitud ";
-    db.sequelize.query(query, { replacements: { estado: req.body.estado, id_solicitud: req.body.id_solicitud }, 
-        type: db.sequelize.QueryTypes.UPDATE }, { type: db.sequelize.QueryTypes.UPDATE })
+    db.sequelize.query(query, {
+        replacements: { estado: req.body.estado, id_solicitud: req.body.id_solicitud },
+        type: db.sequelize.QueryTypes.UPDATE
+    }, { type: db.sequelize.QueryTypes.UPDATE })
         .then((result) => {
             res.json({ 'respuesta': 'success', 'result': result })
         })
@@ -175,16 +185,18 @@ api.put(api_name + '/updatestatus', (req, res) => {
 api.put(api_name + '/updatestatusall', (req, res) => {
     for (let i = 0; i < req.body.length; i++) {
         var query = " update solicitud set estado=:estado where id=:id_solicitud ";
-        db.sequelize.query(query, { replacements: {estado: req.body[i].estado, id_solicitud: req.body[i].id }, 
-                    type: db.sequelize.QueryTypes.UPDATE }, { type: db.sequelize.QueryTypes.UPDATE })
-        .then((result) => {
-            console.log(result);
-            res.json({ 'respuesta': 'success', 'result': result })
-        })
-        .catch((e) => {
-            console.log(e);
-            res.json({ 'respuesta': 'error', 'result': e });
-        })
+        db.sequelize.query(query, {
+            replacements: { estado: req.body[i].estado, id_solicitud: req.body[i].id },
+            type: db.sequelize.QueryTypes.UPDATE
+        }, { type: db.sequelize.QueryTypes.UPDATE })
+            .then((result) => {
+                console.log(result);
+                res.json({ 'respuesta': 'success', 'result': result })
+            })
+            .catch((e) => {
+                console.log(e);
+                res.json({ 'respuesta': 'error', 'result': e });
+            })
     }
 });
 
@@ -192,14 +204,14 @@ api.put(api_name + '/updatestatusall', (req, res) => {
 // DETALL SOLICITUD
 
 api.get(api_name + '/detallesolicitud', (req, res) => {
-    var query='select * from solicitud_detalle as sd inner join general as gen on gen.codigo=sd.id_grupo and gen.grupo=sd.id_grupo_tipo ';
+    var query = 'select * from solicitud_detalle as sd inner join general as gen on gen.codigo=sd.id_grupo and gen.grupo=sd.id_grupo_tipo ';
     db.sequelize
         .query(query, { type: db.sequelize.QueryTypes.SELECT })
         .then((result) => {
-            res.json({'respuesta':'success','result':result});
+            res.json({ 'respuesta': 'success', 'result': result });
         })
-        .catch((e)=>{
-            res.json({'respuesta':'error','result':e});
+        .catch((e) => {
+            res.json({ 'respuesta': 'error', 'result': e });
         })
 });
 
@@ -363,7 +375,7 @@ api.get(api_name + '/listado/candidatos', (req, res) => {
         " WHEN estado=1 THEN 'Inactivo' " +
         " END as estado_des, " +
         " id_sede_entrevista,contacto_sede,fecha_entrevista,prioridad,codigo_posicion, " +
-        " rtrim(codigo_trabajo) as codigo_trabajo, genero,rtrim(talla_1) as talla_1,rtrim(talla_2) as talla_2,rtrim(talla_3) as talla_3 "+
+        " rtrim(codigo_trabajo) as codigo_trabajo, genero,rtrim(talla_1) as talla_1,rtrim(talla_2) as talla_2,rtrim(talla_3) as talla_3 " +
         " from solicitud_candidato ";
     db.sequelize.query(query, { type: db.sequelize.QueryTypes.SELECT })
         .then((result) => {
@@ -417,26 +429,26 @@ api.put(api_name + '/updatecandidatoposicion', (req, res) => {
 
 
 // Update candidato datos
-api.put(api_name+'/updatecandidatodatos',(req,res)=>{
+api.put(api_name + '/updatecandidatodatos', (req, res) => {
     for (let i = 0; i < req.body.length; i++) {
-        var query= " update solicitud_candidato set codigo_trabajo=:codigo_trabajo, genero=:genero, talla_1=:talla_1, talla_2=:talla_2, talla_3=:talla_3 where id=:id_candidato ";
-        var data={
-            codigo_trabajo:req.body[i].codigo_trabajo,
-            genero:req.body[i].genero,
-            talla_1:req.body[i].talla_1,
-            talla_2:req.body[i].talla_2,
-            talla_3:req.body[i].talla_3,
-            id_candidato:req.body[i].id
+        var query = " update solicitud_candidato set codigo_trabajo=:codigo_trabajo, genero=:genero, talla_1=:talla_1, talla_2=:talla_2, talla_3=:talla_3 where id=:id_candidato ";
+        var data = {
+            codigo_trabajo: req.body[i].codigo_trabajo,
+            genero: req.body[i].genero,
+            talla_1: req.body[i].talla_1,
+            talla_2: req.body[i].talla_2,
+            talla_3: req.body[i].talla_3,
+            id_candidato: req.body[i].id
         }
         db.sequelize.query(query, { replacements: data, type: db.sequelize.QueryTypes.UPDATE })
-        .then((result)=>{
-            res.json({'respuesta':'success','result':result})
-            console.log(result);
-        })
-        .catch((e)=>{
-            res.json({'respuesta':'error','result':e})
-            console.log(e)
-        })
+            .then((result) => {
+                res.json({ 'respuesta': 'success', 'result': result })
+                console.log(result);
+            })
+            .catch((e) => {
+                res.json({ 'respuesta': 'error', 'result': e })
+                console.log(e)
+            })
     }
 });
 
@@ -518,56 +530,56 @@ api.get(api_name + '/solicitud_baja', (req, res) => {
 
 // SEGIMIENTO DE SOLICITUD DE ALTA 
 
-api.post(api_name+'/solicituddeuda',(req,res)=>{
+api.post(api_name + '/solicituddeuda', (req, res) => {
     // console.log(req.body);
     for (let i = 0; i < req.body.length; i++) {
-        var dataselect={
-            id_solicitud:req.body[i].id,
-            id_tipo:req.body[i].id_tipo
+        var dataselect = {
+            id_solicitud: req.body[i].id,
+            id_tipo: req.body[i].id_tipo
         }
-        db.sequelize.query('select * from solicitud_baja_deuda where id_solicitud=:id_solicitud and id_tipo=:id_tipo',{ replacements: dataselect, type: db.sequelize.QueryTypes.SELECT })
-        .then((result)=>{
-            if (result.length>0) {
-                var query = " update solicitud_baja_deuda set id_tipo=:id_tipo, tipo_moneda=:tipo_moneda, monto=:monto, estado=:estado where id_solicitud=:id_solicitud ";
-                var data ={
-                    id_solicitud:req.body[i].id_solicitud,
-                    id_tipo:req.body[i].id_tipo,
-                    tipo_moneda:req.body[i].tipo_moneda,
-                    monto:req.body[i].monto,
-                    estado:req.body[i].estado
+        db.sequelize.query('select * from solicitud_baja_deuda where id_solicitud=:id_solicitud and id_tipo=:id_tipo', { replacements: dataselect, type: db.sequelize.QueryTypes.SELECT })
+            .then((result) => {
+                if (result.length > 0) {
+                    var query = " update solicitud_baja_deuda set id_tipo=:id_tipo, tipo_moneda=:tipo_moneda, monto=:monto, estado=:estado where id_solicitud=:id_solicitud ";
+                    var data = {
+                        id_solicitud: req.body[i].id_solicitud,
+                        id_tipo: req.body[i].id_tipo,
+                        tipo_moneda: req.body[i].tipo_moneda,
+                        monto: req.body[i].monto,
+                        estado: req.body[i].estado
+                    }
+                    db.sequelize.query(query, { replacements: data, type: db.sequelize.QueryTypes.UPDATE })
+                        .then((result) => {
+                            res.json({ 'respuesta': 'success', 'result': result });
+                            console.log(result);
+                        })
+                        .catch((e) => {
+                            res.json({ 'respuesta': 'error', 'result': e })
+                            console.log(e);
+                        })
+                } else {
+                    var query = 'insert into solicitud_baja_deuda(id_solicitud,id_tipo,tipo_moneda,monto,estado,usuario_creacion,fecha_creacion) ';
+                    var values = ' values(:id_solicitud,:id_tipo,:tipo_moneda,:monto,:estado,:usuario_creacion,now())';
+                    var data = {
+                        id_solicitud: req.body[i].id,
+                        id_tipo: req.body[i].id_tipo,
+                        tipo_moneda: req.body[i].tipo_moneda,
+                        monto: req.body[i].monto,
+                        estado: req.body[i].estado,
+                        usuario_creacion: req.body[i].usuario_creacion
+                    }
+                    // console.log(data);
+                    db.sequelize.query(query + values, { replacements: data, type: db.sequelize.QueryTypes.INSERT })
+                        .then((result) => {
+                            res.json({ 'respuesta': 'success', 'result': result });
+                            console.log(result);
+                        })
+                        .catch((e) => {
+                            res.json({ 'respuesta': 'error', 'result': e })
+                            console.log(e);
+                        })
                 }
-                db.sequelize.query(query, { replacements: data, type: db.sequelize.QueryTypes.UPDATE })
-                .then((result)=>{
-                    res.json({'respuesta':'success','result':result});
-                    console.log(result);
-                })
-                .catch((e)=>{
-                    res.json({'respuesta':'error','result':e})
-                    console.log(e);
-                })
-            }else{
-                var query='insert into solicitud_baja_deuda(id_solicitud,id_tipo,tipo_moneda,monto,estado,usuario_creacion,fecha_creacion) ';
-                var values= ' values(:id_solicitud,:id_tipo,:tipo_moneda,:monto,:estado,:usuario_creacion,now())';
-                var data ={
-                    id_solicitud:req.body[i].id,
-                    id_tipo:req.body[i].id_tipo,
-                    tipo_moneda:req.body[i].tipo_moneda,
-                    monto:req.body[i].monto,
-                    estado:req.body[i].estado,
-                    usuario_creacion:req.body[i].usuario_creacion
-                }
-                // console.log(data);
-                db.sequelize.query(query+values, { replacements: data, type: db.sequelize.QueryTypes.INSERT })
-                .then((result)=>{
-                    res.json({'respuesta':'success','result':result});
-                    console.log(result);
-                })
-                .catch((e)=>{
-                    res.json({'respuesta':'error','result':e})
-                    console.log(e);
-                })
-            }
-        })
+            })
         // if (req.body[i].id_solicitud==null || req.body.id_tipo==null) {
         // }else{
         // }
@@ -576,19 +588,19 @@ api.post(api_name+'/solicituddeuda',(req,res)=>{
 })
 
 
-api.put(api_name+'/updateestado',(req,res)=>{
+api.put(api_name + '/updateestado', (req, res) => {
     var query = " update solicitud_baja set estado=:estado where id=:id ";
-    var data ={
+    var data = {
         estado: req.body.estado_solicitud,
-        id:req.body.id
+        id: req.body.id
     }
     db.sequelize.query(query, { replacements: data, type: db.sequelize.QueryTypes.UPDATE })
-    .then((result)=>{
-        res.json({'respuesta':'success','result':result});
-    })
-    .catch((e)=>{
-        res.json({'respuesta':'error','result':e})
-    })
+        .then((result) => {
+            res.json({ 'respuesta': 'success', 'result': result });
+        })
+        .catch((e) => {
+            res.json({ 'respuesta': 'error', 'result': e })
+        })
 
 })
 
@@ -629,6 +641,388 @@ api.post(api_name + '/login', (req, res) => {
     req1.write(reqBody)
     req1.end();
 });
+/*
+api.post(api_name + '/login', (req, res) => {
+    const poolData = {
+        UserPoolId: "", // Your user pool id here    
+        ClientId: "" // Your client id here
+    };
+    const pool_region = 'us-east-1';
+    const userPool = new AmazonCognitoIdentity.CognitoUserPool(poolData);
 
+    var authenticationDetails = new AmazonCognitoIdentity.AuthenticationDetails({
+        Username: req.body.correo,
+        Password: req.body.clave,
+    });
+
+    var userData = {
+        Username: req.body.correo,
+        Pool: userPool
+    };
+    var cognitoUser = new AmazonCognitoIdentity.CognitoUser(userData);
+    cognitoUser.authenticateUser(authenticationDetails, {
+        onSuccess: function (result) {
+            console.log('access token + ' + result.getAccessToken().getJwtToken());
+            console.log('id token + ' + result.getIdToken().getJwtToken());
+            console.log('refresh token + ' + result.getRefreshToken().getToken());
+        },
+        onFailure: function (err) {
+            console.log(err);
+        },
+
+    });
+    res.send(200).end();
+});
+
+api.post(api_name + '/changepassword', (req, res) => {
+    const poolData = {
+        UserPoolId: "", // Your user pool id here    
+        ClientId: "" // Your client id here
+    };
+    const pool_region = 'us-east-1';
+    const userPool = new AmazonCognitoIdentity.CognitoUserPool(poolData);
+
+    var authenticationDetails = new AmazonCognitoIdentity.AuthenticationDetails({
+        Username: req.body.correo,
+        Password: req.body.clave,
+    });
+
+    var userData = {
+        Username: req.body.correo,
+        Pool: userPool
+    };
+    var cognitoUser = new AmazonCognitoIdentity.CognitoUser(userData);
+
+    cognitoUser.authenticateUser(authenticationDetails, {
+        onSuccess: function (result) {
+            cognitoUser.changePassword(req.body.clave, req.body.newclave, (err, result) => {
+                if (err) {
+                    console.log(err);
+                } else {
+                    console.log("Successfully changed password of the user.");
+                    console.log(result);
+                }
+            });
+        },
+        onFailure: function (err) {
+            console.log(err);
+        },
+        newPasswordRequired: function (userAttributes, requiredAttributes) {
+            // User was signed up by an admin and must provide new 
+            // password and required attributes, if any, to complete 
+            // authentication.
+
+            // userAttributes: object, which is the user's current profile. It will list all attributes that are associated with the user. 
+            // Required attributes according to schema, which don’t have any values yet, will have blank values.
+            // requiredAttributes: list of attributes that must be set by the user along with new password to complete the sign-in.
+
+            console.log(userAttributes);
+            console.log(requiredAttributes);
+            // Get these details and call 
+            // newPassword: password that user has given
+            // attributesData: object with key as attribute name and value that the user has given.
+            cognitoUser.completeNewPasswordChallenge(req.body.newclave, { name: req.body.name, given_name: req.body.given_name, family_name: req.body.family_name }, this)
+        }
+    });
+    res.send(200).end();
+});
+
+api.post(api_name + '/renew', (req, res) => {
+    const poolData = {
+        UserPoolId: "", // Your user pool id here    
+        ClientId: "" // Your client id here
+    };
+
+    const RefreshToken = new AmazonCognitoIdentity.CognitoRefreshToken({ RefreshToken: "your_refresh_token_from_a_previous_login" });
+    const userPool = new AmazonCognitoIdentity.CognitoUserPool(poolData);
+
+    const userData = {
+        Username: req.body.correo,
+        Pool: userPool
+    };
+
+    const cognitoUser = new AmazonCognitoIdentity.CognitoUser(userData);
+
+    cognitoUser.refreshSession(RefreshToken, (err, session) => {
+        if (err) {
+            console.log(err);
+        } else {
+            let retObj = {
+                "access_token": session.accessToken.jwtToken,
+                "id_token": session.idToken.jwtToken,
+                "refresh_token": session.refreshToken.token,
+            }
+            console.log(retObj);
+        }
+    })
+});*/
+
+AWS.config.update({
+    accessKeyId: 'AKIA5S2NFPNBYXPUWFOI',
+    secretAccessKey: '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',
+    region: 'us-east-1'
+});
+
+api.post(api_name + '/sendMailAlta', (req, res) => {    
+    const ses = new AWS.SES({ apiVersion: "2010-12-01" });
+    const params = {
+        Destination: {
+            ToAddresses: [req.body.mailTo] // Email address/addresses that you want to send your email
+        },
+        //ConfigurationSetName: sjd,
+        Message: {
+            Body: {
+                Html: {
+                    Charset: "UTF-8",
+                    Data:
+                    "<html><p>Su solicitud fue creada – Solicitud # "+req.body.id_solicitud+"</p>"+
+                    "Descripción del puesto: "+req.body.descripcionPuesto+"<br>"+
+                    "Cantidad de recursos: "+req.body.cantidadRecursos+"<br>"+
+                    "Modalidad: "+req.body.modalidad+"<br>"+
+                    "Fecha estimada de inicio: "+req.body.fechaEstimadaInicio+"<br>"+
+                    "Plazo de contratación: "+req.body.plazo+"<br>"+
+                    "</html>"
+                },
+                /*Text: {
+                    Charset: "UTF-8",
+                    Data: "Hola Ransa, todos estamos en Modo C"
+                }*/
+            },
+            Subject: {
+                Charset: "UTF-8",
+                Data: "Su solicitud fue creada – Solicitud #"+req.body.id_solicitud
+            }
+        },
+        Source: "wpereyrac@ransa.net"
+    };
+
+    const sendEmail = ses.sendEmail(params).promise();
+    sendEmail
+        .then(data => {
+            console.log("email enviado", data);
+        })
+        .catch(error => {
+            console.log(error);
+        });
+    res.send(200).end();
+});
+
+api.post(api_name + '/sendMailSolicitarAprobacion', (req, res) => {    
+    const ses = new AWS.SES({ apiVersion: "2010-12-01" });
+    const params = {
+        Destination: {
+            ToAddresses: [req.body.mailTo] // Email address/addresses that you want to send your email
+        },
+        //ConfigurationSetName: sjd,
+        Message: {
+            Body: {
+                Html: {
+                    Charset: "UTF-8",
+                    Data:
+                    "<html><p>Por favor tu  VB para cubrir la siguiente posición:</p>"+
+                    "Descripción del puesto: "+req.body.descripcionPuesto+"<br>"+
+                    "Cantidad de recursos: "+req.body.cantidadRecursos+"<br>"+
+                    "Modalidad: "+req.body.modalidad+"<br>"+
+                    "Fecha estimada de inicio: "+req.body.fechaEstimadaInicio+"<br>"+
+                    "Plazo de contratación: "+req.body.plazo+"<br>"+
+                    "</html>"
+                },
+                /*Text: {
+                    Charset: "UTF-8",
+                    Data: "Hola Ransa, todos estamos en Modo C"
+                }*/
+            },
+            Subject: {
+                Charset: "UTF-8",
+                Data: "Solicito tu VB para proceder con la selección de personal – Solicitud #"+req.body.id_solicitud
+            }
+        },
+        Source: "wpereyrac@ransa.net"
+    };
+
+    const sendEmail = ses.sendEmail(params).promise();
+    sendEmail
+        .then(data => {
+            console.log("email enviado", data);
+        })
+        .catch(error => {
+            console.log(error);
+        });
+    res.send(200).end();
+});
+
+api.post(api_name + '/sendMailSolicitarAprobacionGestor', (req, res) => {    
+    const ses = new AWS.SES({ apiVersion: "2010-12-01" });
+    const params = {
+        Destination: {
+            ToAddresses: [req.body.mailTo] // Email address/addresses that you want to send your email
+        },
+        //ConfigurationSetName: sjd,
+        Message: {
+            Body: {
+                Html: {
+                    Charset: "UTF-8",
+                    Data:
+                    "<html><p>Estimado(a) solicitamos valides la viabilidad de la siguiente búsqueda</p>"+
+                    "Es importante que para iniciarla verifiques:<br>"+
+                    "•	DP, adjuntarla. De no existir la DP coordina con la Gerencia Corporativa de Organización, Compensaciones y Beneficios, para la creación y elaboración de la nueva DP.<br>"+
+                    "•	Estructura remunerativa con el área solicitante y gestiona su aprobación.<br>"+
+                    "•	Valida el resto de información, imput para el inicio del proceso.<br>"+
+                    "</html>"
+                },
+                /*Text: {
+                    Charset: "UTF-8",
+                    Data: "Hola Ransa, todos estamos en Modo C"
+                }*/
+            },
+            Subject: {
+                Charset: "UTF-8",
+                Data: "Validación de requerimiento e información relevante para iniciar la selección de personal – Solicitud #"+req.body.id_solicitud
+            }
+        },
+        Source: "wpereyrac@ransa.net"
+    };
+
+    const sendEmail = ses.sendEmail(params).promise();
+    sendEmail
+        .then(data => {
+            console.log("email enviado", data);
+        })
+        .catch(error => {
+            console.log(error);
+        });
+    res.send(200).end();
+});
+
+api.post(api_name + '/sendMailInicioBusquedaNuevoPersonal', (req, res) => {    
+    const ses = new AWS.SES({ apiVersion: "2010-12-01" });
+    const params = {
+        Destination: {
+            ToAddresses: [req.body.mailTo] // Email address/addresses that you want to send your email
+        },
+        //ConfigurationSetName: sjd,
+        Message: {
+            Body: {
+                Html: {
+                    Charset: "UTF-8",
+                    Data:
+                    "<html><p>Equipo de Atracción por favor iniciemos la siguiente búsqueda.</p>"+
+                    "</html>"
+                },
+                /*Text: {
+                    Charset: "UTF-8",
+                    Data: "Hola Ransa, todos estamos en Modo C"
+                }*/
+            },
+            Subject: {
+                Charset: "UTF-8",
+                Data: "Requerimiento de Personal – Solicitud #"+req.body.id_solicitud
+            }
+        },
+        Source: "wpereyrac@ransa.net"
+    };
+
+    const sendEmail = ses.sendEmail(params).promise();
+    sendEmail
+        .then(data => {
+            console.log("email enviado", data);
+        })
+        .catch(error => {
+            console.log(error);
+        });
+    res.send(200).end();
+});
+
+api.post(api_name + '/sendMailGenerarCodigoPosicion', (req, res) => {    
+    const ses = new AWS.SES({ apiVersion: "2010-12-01" });
+    const params = {
+        Destination: {
+            ToAddresses: [req.body.mailTo] // Email address/addresses that you want to send your email
+        },
+        //ConfigurationSetName: sjd,
+        Message: {
+            Body: {
+                Html: {
+                    Charset: "UTF-8",
+                    Data:
+                    "<html><p>Estimado(a)  colaborador(a),  agradeceremos nos envíes el código de posición para poder reportar el ingreso.</p>"+
+                    "•	Denominación del puesto"+""+"<br/>"+
+                    "•	División"+""+"<br/>"+
+                    "•	Subdivisión"+""+"<br/>"+
+                    "•	Jefe directo:"+""+"<br/>"+
+                    "•	Uo"+""+"<br/>"+
+                    "•	Ceco"+""+"<br/>"+
+                    "•	Área de persona: "+""+"<br/>"+//Puesto estable, contratado, practicante
+                    "</html>"
+                },
+                /*Text: {
+                    Charset: "UTF-8",
+                    Data: "Hola Ransa, todos estamos en Modo C"
+                }*/
+            },
+            Subject: {
+                Charset: "UTF-8",
+                Data: "Solicito código de posición -  Solicitud #"+req.body.id_solicitud
+            }
+        },
+        Source: "wpereyrac@ransa.net"
+    };
+
+    const sendEmail = ses.sendEmail(params).promise();
+    sendEmail
+        .then(data => {
+            console.log("email enviado", data);
+        })
+        .catch(error => {
+            console.log(error);
+        });
+    res.send(200).end();
+});
+
+api.post(api_name + '/sendMailGenerarCodigoPosicion', (req, res) => {    
+    const ses = new AWS.SES({ apiVersion: "2010-12-01" });
+    const params = {
+        Destination: {
+            ToAddresses: [req.body.mailTo] // Email address/addresses that you want to send your email
+        },
+        //ConfigurationSetName: sjd,
+        Message: {
+            Body: {
+                Html: {
+                    Charset: "UTF-8",
+                    Data:
+                    "<html><p>Estimado(a)  colaborador(a),  agradeceremos nos envíes el código de posición para poder reportar el ingreso.</p>"+
+                    "•	Denominación del puesto"+""+"<br/>"+
+                    "•	División"+""+"<br/>"+
+                    "•	Subdivisión"+""+"<br/>"+
+                    "•	Jefe directo:"+""+"<br/>"+
+                    "•	Uo"+""+"<br/>"+
+                    "•	Ceco"+""+"<br/>"+
+                    "•	Área de persona: "+""+"<br/>"+//Puesto estable, contratado, practicante
+                    "</html>"
+                },
+                /*Text: {
+                    Charset: "UTF-8",
+                    Data: "Hola Ransa, todos estamos en Modo C"
+                }*/
+            },
+            Subject: {
+                Charset: "UTF-8",
+                Data: "Solicito código de posición -  Solicitud #"+req.body.id_solicitud
+            }
+        },
+        Source: "wpereyrac@ransa.net"
+    };
+
+    const sendEmail = ses.sendEmail(params).promise();
+    sendEmail
+        .then(data => {
+            console.log("email enviado", data);
+        })
+        .catch(error => {
+            console.log(error);
+        });
+    res.send(200).end();
+});
 
 module.exports = api
