@@ -42,7 +42,17 @@ class Solicitud extends React.Component {
                 descripcion: '',
                 usuario_registro: '',
                 estado: 1,
+            },
+
+            data_send_mail:{
+                mailTo:[],
+                descripcionPuesto:'',
+                cantidadRecursos:'',
+                modalidad:'',
+                fechaEstimadaInicio:'',
+                plazo:''
             }
+
         };
 
         fetch(this.state.server + api_name + '/general')
@@ -73,17 +83,28 @@ class Solicitud extends React.Component {
                 this.setState({ accesos: accesos });
                 this.setState({ plazo: plazo });
             }.bind(this));
-        
     }
 
     handleForm = (e) => {
         const { datasolicitud } = this.state
         this.setState({ datasolicitud: { ...datasolicitud, [e.target.name]: e.target.value } });
+        
+        if (e.target.name=='id_puesto') {
+            this.state.data_send_mail.descripcionPuesto=e.target.options[e.target.selectedIndex].text;
+        }else if(e.target.name=='cantidad'){
+            this.state.data_send_mail.cantidadRecursos=e.target.value;
+        }else if(e.target.name=='fecha_estimada_inicio'){
+            this.state.data_send_mail.fechaEstimadaInicio=e.target.value;
+        }
+        this.forceUpdate();
+        console.log(this.state.data_send_mail);
     }
 
     handleSelectForm = (e, label) => {
         const { datasolicitud } = this.state
         this.setState({ datasolicitud: { ...datasolicitud, [label]: e.target.value } });
+        this.state.data_send_mail.plazo=e.target.options[e.target.selectedIndex].text;
+        this.forceUpdate();
     }
 
     buscar_user = (label) => {
@@ -95,24 +116,29 @@ class Solicitud extends React.Component {
         } else {
             codigo = datasolicitud.id_jefe_directo;
         }
+        var data_email=[]
         fetch(this.state.server + api_name + '/personal/' + codigo)
-            .then(response => response.json())
-            .then(function (personales) {
-                for (var i in personales) {
-                    if (label === 'id_aprobador') {
-                        that.setState({
-                            nombres_aprobador: personales[i].nombres + ' ' + personales[i].apellido_paterno
-                                + ' ' + personales[i].apellido_materno
-                        });
-                    } else {
-                        that.setState({
-                            nombres_jefe: personales[i].nombres + ' ' + personales[i].apellido_paterno
-                                + ' ' + personales[i].apellido_materno
-                        });
-                    }
-
+        .then(response => response.json())
+        .then(function (personales) {
+            for (var i in personales) {
+                if (label === 'id_aprobador') {
+                    that.setState({
+                        nombres_aprobador: personales[i].nombres + ' ' + personales[i].apellido_paterno
+                            + ' ' + personales[i].apellido_materno
+                    });
+                } else {
+                    that.setState({
+                        nombres_jefe: personales[i].nombres + ' ' + personales[i].apellido_paterno
+                        + ' ' + personales[i].apellido_materno
+                    });
+                    data_email.push(personales[i].email_corp);
                 }
-            });
+                
+            }
+        });
+        
+        this.state.data_send_mail.mailTo=data_email;
+        this.forceUpdate();
     }
 
     modalidad1 = _ =>{
@@ -333,6 +359,7 @@ class Solicitud extends React.Component {
         this.state.datasolicitud.inicio_estimado_tiempo = '';
         this.state.datasolicitud.estimacion_duracion_tiempo = '';
         this.state.datasolicitud.observaciones = '';
+        this.state.data_send_mail.modalidad=e.target.options[e.target.selectedIndex].text;
         this.forceUpdate();
         
         if (e.target.value == 1) {
@@ -395,6 +422,9 @@ class Solicitud extends React.Component {
         //this.forceUpdate();
     }
 
+
+    
+
     btnguardar = (event) => {
         let self = this;
         fetch(this.state.server + api_name + '/solicitudes', {
@@ -402,10 +432,33 @@ class Solicitud extends React.Component {
             body: JSON.stringify(this.state.datasolicitud),
             headers: { 'Content-Type': 'application/json' }
         })
-            .then(res => res.json())
-            .then(function (data) {
-                self.customAlert(data.respuesta)
-            });
+        .then(res => res.json())
+        .then(function (data) {
+            if (data.respuesta=='success') {
+                
+            }
+            self.customAlert(data.respuesta)
+        });
+
+        // var data_send={
+        //     mailTo:['hrojas@summit.com.pe','hernanrojasutani@gmail.com'],
+        //     id_solicitud:1,
+        //     descripcionPuesto:'Test',
+        //     cantidadRecursos:'5',
+        //     modalidad:'1',
+        //     fechaEstimadaInicio:'123',
+        //     plazo:'1'
+        // }
+        
+        fetch(this.state.server+api_name+'/sendMailAlta',{
+            method: 'POST',
+            body: JSON.stringify(this.state.data_send_mail),
+            headers: { 'Content-Type': 'application/json' }
+        })
+        .then(res => res.json())
+        .then(function (data) {
+            console.log(data);
+        });
     }
 
 

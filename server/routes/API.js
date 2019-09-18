@@ -763,48 +763,59 @@ AWS.config.update({
     region: 'us-east-1'
 });
 
-api.post(api_name + '/sendMailAlta', (req, res) => {    
-    const ses = new AWS.SES({ apiVersion: "2010-12-01" });
-    const params = {
-        Destination: {
-            ToAddresses: [req.body.mailTo] // Email address/addresses that you want to send your email
-        },
-        //ConfigurationSetName: sjd,
-        Message: {
-            Body: {
-                Html: {
-                    Charset: "UTF-8",
-                    Data:
-                    "<html><p>Su solicitud fue creada – Solicitud # "+req.body.id_solicitud+"</p>"+
-                    "Descripción del puesto: "+req.body.descripcionPuesto+"<br>"+
-                    "Cantidad de recursos: "+req.body.cantidadRecursos+"<br>"+
-                    "Modalidad: "+req.body.modalidad+"<br>"+
-                    "Fecha estimada de inicio: "+req.body.fechaEstimadaInicio+"<br>"+
-                    "Plazo de contratación: "+req.body.plazo+"<br>"+
-                    "</html>"
-                },
-                /*Text: {
-                    Charset: "UTF-8",
-                    Data: "Hola Ransa, todos estamos en Modo C"
-                }*/
-            },
-            Subject: {
-                Charset: "UTF-8",
-                Data: "Su solicitud fue creada – Solicitud #"+req.body.id_solicitud
-            }
-        },
-        Source: "wpereyrac@ransa.net"
-    };
-
-    const sendEmail = ses.sendEmail(params).promise();
-    sendEmail
-        .then(data => {
-            console.log("email enviado", data);
+api.post(api_name + '/sendMailAlta', (req, res) => {
+    var id_solicitud='';
+    setTimeout(() =>{
+        db.sequelize.query("SELECT max(id) as id from solicitud",{ type: db.sequelize.QueryTypes.SELECT })
+        .then((result) =>{
+            id_solicitud=result[0].id;
+            console.log(result[0].id);
         })
-        .catch(error => {
-            console.log(error);
-        });
-    res.send(200).end();
+    }, 500);
+    setTimeout(() => {
+        const ses = new AWS.SES({ apiVersion: "2010-12-01" });
+        const params = {
+            Destination: {
+                ToAddresses: req.body.mailTo // Email address/addresses that you want to send your email
+                // ToAddresses: [ 'hrojas@summit.com.pe' ]
+            },
+            //ConfigurationSetName: sjd,
+            Message: {
+                Body: {
+                    Html: {
+                        Charset: "UTF-8",
+                        Data:
+                        "<html><p>Su solicitud fue creada – Solicitud # "+id_solicitud+"</p>"+
+                        "Descripción del puesto: "+req.body.descripcionPuesto+"<br>"+
+                        "Cantidad de recursos: "+req.body.cantidadRecursos+"<br>"+
+                        "Modalidad: "+req.body.modalidad+"<br>"+
+                        "Fecha estimada de inicio: "+req.body.fechaEstimadaInicio+"<br>"+
+                        "Plazo de contratación: "+req.body.plazo+"<br>"+
+                        "</html>"
+                    },
+                    /*Text: {
+                        Charset: "UTF-8",
+                        Data: "Hola Ransa, todos estamos en Modo C"
+                    }*/
+                },
+                Subject: {
+                    Charset: "UTF-8",
+                    Data: "Su solicitud fue creada – Solicitud #"+req.body.id_solicitud
+                }
+            },
+            Source: "wpereyrac@ransa.net"
+        };
+    
+        const sendEmail = ses.sendEmail(params).promise();
+        sendEmail
+            .then(data => {
+                console.log("email enviado", data);
+            })
+            .catch(error => {
+                console.log(error);
+            });
+        res.send(200).end();
+    }, 1000);
 });
 
 api.post(api_name + '/sendMailSolicitarAprobacion', (req, res) => {    
